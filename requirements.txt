@@ -10,11 +10,11 @@ hydra-colorlog>=1.1.0
 hydra-optuna-sweeper>=1.1.0
 
 # --------- loggers --------- #
-# wandb
-# neptune-client
-# mlflow
-# comet-ml
-# tensorboard
+wandb
+neptune-client
+mlflow
+comet-ml
+tensorboard
 
 # --------- linters --------- #
 pre-commit      # hooks for applying linters on commit
