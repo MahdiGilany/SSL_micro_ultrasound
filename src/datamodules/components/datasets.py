@@ -55,8 +55,6 @@ class ExactDataset(Dataset, HyperparametersMixin):
         label = [label[ind] for i, ind in enumerate(self.ind_RFimg)]
         self.labels = to_categorical(label)
 
-
-
     def find_len_centers(self):
         """finds the names of central patches and len of that which correspond to len of data since
         for each central patch we would have one bigger patch."""

@@ -146,3 +146,4 @@ logs/
 wandb/
 .env
 .autoenv
+/old_code/
