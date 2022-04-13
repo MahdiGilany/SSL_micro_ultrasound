@@ -75,20 +75,27 @@ class ExactLitModule(LightningModule):
         # `outputs` is a list of dicts returned from `training_step()`
         pass
 
-    def validation_step(self, batch: Any, batch_idx: int):
+    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx):
         loss, preds, targets = self.step(batch)
 
-        # log val metrics
-        acc = self.val_acc(preds, targets)
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        if dataloader_idx == 0:
+            # log val metrics
+            acc = self.val_acc(preds, targets)
+            self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+            self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+
+        elif dataloader_idx == 1:
+            # log test metrics
+            acc = self.test_acc(preds, targets)
+            self.log("test/loss", loss, on_step=False, on_epoch=True)
+            self.log("test/acc", acc, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
     def validation_epoch_end(self, outputs: List[Any]):
         acc = self.val_acc.compute()  # get val accuracy from current epoch
         self.val_acc_best.update(acc)
-        self.log("val/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
+        self.log("val/acc_best/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
 
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)

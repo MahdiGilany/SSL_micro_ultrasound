@@ -120,13 +120,21 @@ class ExactDataModule(LightningDataModule):
         )
 
     def val_dataloader(self):
-        return DataLoader(
+        val_loader = DataLoader(
             dataset=self.val_ds,
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
             shuffle=False,
         )
+        test_asval_loader = DataLoader(
+            dataset=self.test_ds,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
+            shuffle=False,
+        )
+        return [val_loader, test_asval_loader]
 
     def test_dataloader(self):
         return DataLoader(
