@@ -1,0 +1,36 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /datamodule: exact.yaml
+  - override /model: exact.yaml
+  - override /callbacks: default.yaml
+  - override /logger: wandb
+  - override /trainer: default.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+name: "resnet_initial_test"
+
+seed: 12345
+
+trainer:
+  min_epochs: 10
+  max_epochs: 10
+  gradient_clip_val: 0.5
+
+model:
+  lr: 0.0001
+  net:
+    layers: [1, 1, 1, 1] # number of conv layers in each residual block
+
+datamodule:
+  batch_size: 32
+
+logger:
+  wandb:
+    tags: ["exact", "${name}"]

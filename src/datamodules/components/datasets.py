@@ -27,7 +27,6 @@ class ExactDataset(Dataset, HyperparametersMixin):
 
         """
         # save all input parameters in hparams including:
-        #   # data_dir = dataset_hyp.data_dir
         #   # inv_cutoff = dataset_hyp.inv_cutoff
         #   # patch_sz = dataset_hyp.patch_sz
         #   # jump_sz = dataset_hyp.jump_sz
@@ -52,8 +51,8 @@ class ExactDataset(Dataset, HyperparametersMixin):
 
         # labels
         label = extended_metadata.meta_data[f'label_{self.hparams.state}']
-        label = [label[ind] for i, ind in enumerate(self.ind_RFimg)]
-        self.labels = to_categorical(label)
+        self.labels = [label[ind] for i, ind in enumerate(self.ind_RFimg)]
+        # self.labels = to_categorical(self.label)
 
     def find_len_centers(self):
         """finds the names of central patches and len of that which correspond to len of data since
@@ -209,7 +208,7 @@ class ExactDataset(Dataset, HyperparametersMixin):
         # stitching patches together
         all_1x1patches = np.stack(all_1x1patches)
         all_1x1patches = rearrange(all_1x1patches, '(b1 b2) h w -> (b1 h) (b2 w)', b1=patch_sz) #25x360x11 to 5x360 x 5x11
-        return resize_norm(all_1x1patches)
+        return resize_norm(all_1x1patches)[np.newaxis, ...]
 
     def patchind_to_RFimgind(self, index):
         # loading all corelen

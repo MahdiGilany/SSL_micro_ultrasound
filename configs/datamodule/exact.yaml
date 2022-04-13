@@ -1,0 +1,17 @@
+_target_: src.datamodules.exact_datamodule.ExactDataModule
+
+data_dir: ${data_dir}/Exact/ # data_dir is specified in config.yaml
+# comment for later: C:\Users\Mahdi\Desktop\Shared_folder\OneDrive_Queens_University\Project_codes\SSLmicroUltrasound\data\Exact\
+
+batch_size: 32
+num_workers: 4
+pin_memory: False
+
+train_val_split: 0.25 # ratio of train to val dataset length
+split_randomstate: 26 # random state for above random split
+sampler: True # Dataloader train sampler to use or not
+
+dataset_hyp: # dataset hyperparameters
+  patch_sz: 5 # patch size in mm
+  jump_sz: 1 # jump of each patch to create next patch
+  inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val

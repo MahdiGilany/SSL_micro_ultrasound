@@ -143,8 +143,8 @@ class ExactDataModule(LightningDataModule):
         count = [0] * 2
         dataset = self.train_ds
 
-        count[0] = np.sum(dataset.labels[:, 0]).astype(int)
-        count[1] = np.sum(dataset.labels[:, 1]).astype(int)
+        count[1] = np.sum(dataset.labels).astype(int)
+        count[0] = (len(dataset.labels) - count[1]).astype(int)
 
         weight_per_class = [0.] * 2
         N = float(sum(count))
@@ -154,5 +154,5 @@ class ExactDataModule(LightningDataModule):
         weight = [0] * len(dataset.labels)
 
         for idx, l in enumerate(dataset.labels):
-            weight[idx] = weight_per_class[l[1]]
+            weight[idx] = weight_per_class[l]
         return weight

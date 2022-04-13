@@ -1,0 +1,12 @@
+_target_: src.models.exact_module.ExactLitModule
+lr: 0.0001
+weight_decay: 0.00005
+
+net:
+  _target_: src.models.components.resnets.ResNet
+  num_classes: 2 # number of classes
+  in_channels: 1 # number of input channels
+  layers: [1, 1, 1, 1] # number of conv layers in each residual block
+  block:
+    _target_: hydra.utils.get_class
+    path: src.models.components.resnets.BasicBlock
