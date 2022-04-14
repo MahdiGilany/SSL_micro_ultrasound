@@ -1,6 +1,7 @@
 from typing import Any, List
 
 import torch
+import torch_optimizer as trch_opt
 from pytorch_lightning import LightningModule
 from torchmetrics import MaxMetric
 from torchmetrics.classification.accuracy import Accuracy
@@ -27,6 +28,7 @@ class ExactLitModule(LightningModule):
         net: torch.nn.Module,
         lr: float = 0.001,
         weight_decay: float = 0.0005,
+        scheduler: dict = None,
     ):
         super().__init__()
 
@@ -41,9 +43,10 @@ class ExactLitModule(LightningModule):
 
         # use separate metric instance for train, val and test step
         # to ensure a proper reduction over the epoch
-        self.train_acc = Accuracy()
-        self.val_acc = Accuracy()
-        self.test_acc = Accuracy()
+        # macro means balanced accuracy
+        self.train_acc = Accuracy() #average='macro', num_classes=2)
+        self.val_acc = Accuracy() #average='macro', num_classes=2)
+        self.test_acc = Accuracy() #average='macro', num_classes=2)
 
         # for logging best so far validation accuracy
         self.val_acc_best = MaxMetric()
@@ -63,6 +66,9 @@ class ExactLitModule(LightningModule):
 
         # log train metrics
         acc = self.train_acc(preds, targets)
+        lr = self.onecyc_scheduler.get_last_lr()
+
+        self.log("lr", lr[0], on_step=False, on_epoch=True, prog_bar=False)
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         self.log("train/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
 
@@ -97,6 +103,13 @@ class ExactLitModule(LightningModule):
         self.val_acc_best.update(acc)
         self.log("val/acc_best/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
 
+        # preds = torch.cat([i['preds'] for i in outputs[0]], dim=0)
+        # targets = torch.cat([i['targets'] for i in outputs[0]], dim=0)
+        #
+        # acc2 = (preds == targets)
+        # acc2 = acc2.sum()/len(acc2)
+        # self.log('val/acc2', acc2, on_epoch=True)
+
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
 
@@ -123,6 +136,24 @@ class ExactLitModule(LightningModule):
         See examples here:
             https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
         """
-        return torch.optim.Adam(
-            params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
-        )
+
+        n_epochs = self.hparams.scheduler.n_epochs
+        n_batches = self.hparams.scheduler.n_batches
+
+        # self.optimizer = torch.optim.Adam(params=self.parameters(), lr=self.hparams.lr,
+        #                                   weight_decay=self.hparams.weight_decay)
+
+        self.optimizer = trch_opt.NovoGrad(self.parameters(), lr=float(self.hparams.lr),
+                                           weight_decay=self.hparams.weight_decay)
+
+        self.onecyc_scheduler = \
+            torch.optim.lr_scheduler.OneCycleLR(self.optimizer, float(self.hparams.lr), epochs=n_epochs,
+                                                steps_per_epoch=int(n_epochs/n_batches),
+                                                pct_start=0.3, anneal_strategy='cos', cycle_momentum=True,
+                                                base_momentum=0.85,
+                                                max_momentum=0.95, div_factor=10.0,
+                                                final_div_factor=10000.0, three_phase=False,
+                                                last_epoch=-1, verbose=False)
+
+
+        return [self.optimizer], [self.onecyc_scheduler]
