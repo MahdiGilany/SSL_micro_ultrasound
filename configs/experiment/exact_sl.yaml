@@ -23,6 +23,7 @@ trainer:
   max_epochs: 100
   gradient_clip_val: null
   limit_train_batches: null
+  limit_val_batches: null
 
 datamodule:
   batch_size: 32
@@ -30,12 +31,11 @@ datamodule:
 
 model:
   lr: 0.0001
+  batch_size: ${datamodule.batch_size}
   net:
-    layers: [ 1, 1, 1, 1 ] # number of conv layers in each residual block
-  scheduler:
-    n_epochs: ${trainer.max_epochs}
-    n_batches: ${datamodule.batch_size}
+    layers: [1, 1, 1, 1] # number of conv layers in each residual block
 
 logger:
   wandb:
-    tags: ["exact", "${name}"]
+    name: ${name}_mx-epch${trainer.max_epochs}_bs${datamodule.batch_size}
+    tags: ["exact", "test", "${name}"]

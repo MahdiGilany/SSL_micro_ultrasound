@@ -2,9 +2,11 @@ from typing import Any, List
 
 import torch
 import torch_optimizer as trch_opt
+import wandb
 from pytorch_lightning import LightningModule
 from torchmetrics import MaxMetric
 from torchmetrics.classification.accuracy import Accuracy
+from torchmetrics.classification.confusion_matrix import ConfusionMatrix
 
 from src.models.components.simple_dense_net import SimpleDenseNet
 
@@ -28,7 +30,7 @@ class ExactLitModule(LightningModule):
         net: torch.nn.Module,
         lr: float = 0.001,
         weight_decay: float = 0.0005,
-        scheduler: dict = None,
+        batch_size: int = 32,
     ):
         super().__init__()
 
@@ -77,6 +79,10 @@ class ExactLitModule(LightningModule):
         # remember to always return loss from `training_step()` or else backpropagation will fail!
         return {"loss": loss, "preds": preds, "targets": targets}
 
+    def on_before_zero_grad(self, optimizer) -> None:
+        # for OneCycLR we need to take a step for each batch
+        self.onecyc_scheduler.step()
+
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
         pass
@@ -103,8 +109,11 @@ class ExactLitModule(LightningModule):
         self.val_acc_best.update(acc)
         self.log("val/acc_best/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
 
-        # preds = torch.cat([i['preds'] for i in outputs[0]], dim=0)
-        # targets = torch.cat([i['targets'] for i in outputs[0]], dim=0)
+        # logging confusion matrix
+        preds = torch.cat([i['preds'] for i in outputs[0]], dim=0).detach().cpu().numpy()
+        targets = torch.cat([i['targets'] for i in outputs[0]], dim=0).detach().cpu().numpy()
+        wandb_conf = wandb.plot.confusion_matrix(probs=None, y_true=targets, preds=preds, class_names=["0", "1"])
+        self.logger.experiment.log({"val/conf_mat": wandb_conf})
         #
         # acc2 = (preds == targets)
         # acc2 = acc2.sum()/len(acc2)
@@ -137,8 +146,10 @@ class ExactLitModule(LightningModule):
             https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
         """
 
-        n_epochs = self.hparams.scheduler.n_epochs
-        n_batches = self.hparams.scheduler.n_batches
+        n_epochs = self.trainer.max_epochs
+        len_ds = len(self.trainer.datamodule.train_ds)
+        steps_per_epoch = int(len_ds / self.hparams.batch_size)
+        print(len_ds, steps_per_epoch)
 
         # self.optimizer = torch.optim.Adam(params=self.parameters(), lr=self.hparams.lr,
         #                                   weight_decay=self.hparams.weight_decay)
@@ -148,12 +159,11 @@ class ExactLitModule(LightningModule):
 
         self.onecyc_scheduler = \
             torch.optim.lr_scheduler.OneCycleLR(self.optimizer, float(self.hparams.lr), epochs=n_epochs,
-                                                steps_per_epoch=int(n_epochs/n_batches),
+                                                steps_per_epoch=steps_per_epoch,
                                                 pct_start=0.3, anneal_strategy='cos', cycle_momentum=True,
                                                 base_momentum=0.85,
                                                 max_momentum=0.95, div_factor=10.0,
                                                 final_div_factor=10000.0, three_phase=False,
                                                 last_epoch=-1, verbose=False)
 
-
-        return [self.optimizer], [self.onecyc_scheduler]
+        return self.optimizer #, [self.onecyc_scheduler] removed since needs steps for each batch
