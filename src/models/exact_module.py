@@ -107,17 +107,17 @@ class ExactLitModule(LightningModule):
     def validation_epoch_end(self, outputs: List[Any]):
         acc = self.val_acc.compute()  # get val accuracy from current epoch
         self.val_acc_best.update(acc)
-        self.log("val/acc_best/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
+        self.log("val/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
+
+        # saving all preds for corewise callback: val and test
+        self.all_val_preds = torch.cat([i['preds'] for i in outputs[0]], dim=0).detach().cpu().numpy()
+        self.all_test_preds = torch.cat([i['preds'] for i in outputs[1]], dim=0).detach().cpu().numpy()
+        all_val_targets = torch.cat([i['targets'] for i in outputs[0]], dim=0).detach().cpu().numpy()
+        all_test_targets = torch.cat([i['targets'] for i in outputs[1]], dim=0).detach().cpu().numpy()
 
         # logging confusion matrix
-        preds = torch.cat([i['preds'] for i in outputs[0]], dim=0).detach().cpu().numpy()
-        targets = torch.cat([i['targets'] for i in outputs[0]], dim=0).detach().cpu().numpy()
-        wandb_conf = wandb.plot.confusion_matrix(probs=None, y_true=targets, preds=preds, class_names=["0", "1"])
+        wandb_conf = wandb.plot.confusion_matrix(probs=None, y_true=all_val_targets, preds=self.all_val_preds, class_names=["0", "1"])
         self.logger.experiment.log({"val/conf_mat": wandb_conf})
-        #
-        # acc2 = (preds == targets)
-        # acc2 = acc2.sum()/len(acc2)
-        # self.log('val/acc2', acc2, on_epoch=True)
 
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
@@ -146,13 +146,12 @@ class ExactLitModule(LightningModule):
             https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
         """
 
+        # self.optimizer = torch.optim.Adam(params=self.parameters(), lr=self.hparams.lr,
+        #                                   weight_decay=self.hparams.weight_decay)
+
         n_epochs = self.trainer.max_epochs
         len_ds = len(self.trainer.datamodule.train_ds)
         steps_per_epoch = int(len_ds / self.hparams.batch_size)
-        print(len_ds, steps_per_epoch)
-
-        # self.optimizer = torch.optim.Adam(params=self.parameters(), lr=self.hparams.lr,
-        #                                   weight_decay=self.hparams.weight_decay)
 
         self.optimizer = trch_opt.NovoGrad(self.parameters(), lr=float(self.hparams.lr),
                                            weight_decay=self.hparams.weight_decay)
@@ -166,4 +165,4 @@ class ExactLitModule(LightningModule):
                                                 final_div_factor=10000.0, three_phase=False,
                                                 last_epoch=-1, verbose=False)
 
-        return self.optimizer #, [self.onecyc_scheduler] removed since needs steps for each batch
+        return self.optimizer #, [self.onecyc_scheduler] removed since needs steps for each batch (later should change)

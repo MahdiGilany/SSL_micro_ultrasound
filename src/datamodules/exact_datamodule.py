@@ -53,6 +53,12 @@ class ExactDataModule(LightningDataModule):
         self.val_ds: Optional[Dataset] = None
         self.test_ds: Optional[Dataset] = None
 
+        # data transformations
+        self.transforms = transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.,), (1.,))]
+        )
+
+
     @property
     def num_classes(self) -> int:
         return 2
@@ -100,13 +106,12 @@ class ExactDataModule(LightningDataModule):
                                   extended_metadata=self.extended_metadata)
                 self.__setattr__(f'{state}_ds', ds)
 
-
     def train_dataloader(self):
         sampler = None
         shuffle = True
         if self.hparams.sampler:
             shuffle = False
-            weights = self.make_weights_for_balanced_classes()
+            weights = self.balancing_weights()
             weights = torch.Tensor(weights)
             sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
@@ -145,7 +150,7 @@ class ExactDataModule(LightningDataModule):
             shuffle=False,
         )
 
-    def make_weights_for_balanced_classes(self,):
+    def balancing_weights(self,):
         ##todo: code is old and not efficient
         # count for each class -> two classes here
         count = [0] * 2

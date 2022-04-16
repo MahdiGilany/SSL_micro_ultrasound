@@ -2,17 +2,11 @@ from itertools import product
 
 import numpy as np
 from ismember import ismember
-from PIL import Image
+
 from pytorch_lightning.core.mixins import HyperparametersMixin
 from torch.utils.data import Dataset
 
 from .data_utils import *
-
-
-def resize_norm(patch):
-    patch_resized = np.array(Image.fromarray(patch).resize((256, 256)))
-    return (patch_resized - np.mean(patch_resized, keepdims=True))/np.std(patch_resized, keepdims=True)
-    # return patch_resized
 
 
 class ExactDataset(Dataset, HyperparametersMixin):
@@ -43,18 +37,18 @@ class ExactDataset(Dataset, HyperparametersMixin):
 
         # finding len and name of patch centers in out dataset based on patch centers inside
         # needle for SL and inside the whole image in SSL (former not implemented yet)
-        self.len_ds, self.used_patch_names, self.all_corelen_sl = self.find_len_centers()
+        self.len_ds, self.used_patch_names, self.all_corelen_sl = self.find_len_and_centers()
 
         # RF image index number for each of used patches (used_patch_names). These indexes can be used for
         # accessing information in meta data corresponding to train/test/val patches
         self.ind_RFimg = [self.patchind_to_RFimgind(i) for i, n in enumerate(self.used_patch_names)]
 
         # labels
-        label = extended_metadata.meta_data[f'label_{self.hparams.state}']
-        self.labels = [label[ind] for i, ind in enumerate(self.ind_RFimg)]
+        self.core_labels = extended_metadata.meta_data[f'label_{self.hparams.state}']
+        self.labels = [self.core_labels[ind] for i, ind in enumerate(self.ind_RFimg)]
         # self.labels = to_categorical(self.label)
 
-    def find_len_centers(self):
+    def find_len_and_centers(self):
         """finds the names of central patches and len of that which correspond to len of data since
         for each central patch we would have one bigger patch."""
         state = self.hparams.state
@@ -65,8 +59,9 @@ class ExactDataset(Dataset, HyperparametersMixin):
         # appending name of all central patches (1x1 patches) inside needle and prostate from RF images in data_{state}
         all_patchnames_sl_pr = []
         for i, patch1x1_name_pr in enumerate(data_names):
-            """looping over all RF images and multiplying mask of prostate & needle and selecting
-            centers of 5x5 patches."""
+            # """looping over all RF images and multiplying mask of prostate & needle and selecting
+            # centers of 5x5 patches.
+
             # first get all centers of patches inside prostate for i'th RF image
             all_1x1patchcenters_pr = [np.array(name.split('_')[-3:-1]).astype(int) for name in patch1x1_name_pr]
             all_1x1patchcenters_pr = np.stack(all_1x1patchcenters_pr)
@@ -115,8 +110,8 @@ class ExactDataset(Dataset, HyperparametersMixin):
 
         copy_ind = np.copy(ind)
         for center in chk_centers:
-            """checking head and tail big patches to see if they are completely located in prostate
-            region."""
+            # checking head and tail big patches to see if they are completely located in prostate
+            # region.
 
             # indexes of possible axial and lateral numbers
             cent_axl_ind, = np.where(axl_center_numbers == all_patchcenters_sl_pr[center, 0])

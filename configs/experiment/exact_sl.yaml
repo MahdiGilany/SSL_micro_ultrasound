@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "initial_ts"
+name: "1st-test_coreacc"
 
 seed: 12345
 
@@ -28,6 +28,12 @@ trainer:
 datamodule:
   batch_size: 32
   num_workers: 4
+  train_val_split: 0.25 # ratio of train to val dataset length
+  split_randomstate: 26 # random state for above random split
+  dataset_hyp: # dataset hyperparameters
+    patch_sz: 5 # patch size in mm
+    jump_sz: 1 # jump of each patch to create next patch
+    inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val
 
 model:
   lr: 0.0001
@@ -37,5 +43,5 @@ model:
 
 logger:
   wandb:
-    name: ${name}_mx-epch${trainer.max_epochs}_bs${datamodule.batch_size}
+    name: ${name}_inv-cut${datamodule.dataset_hyp.inv_cutoff}_srs${datamodule.split_randomstate}_split${datamodule.train_val_split}
     tags: ["exact", "test", "${name}"]

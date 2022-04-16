@@ -22,6 +22,11 @@ model_summary:
 
 rich_progress_bar:
   _target_: pytorch_lightning.callbacks.RichProgressBar
+
 #onecyclelr:
 #  _target_: src.callbacks.onecyclelr.OneCycleLR
 #  batch_size: 32
+
+corewise_metrics:
+  _target_: src.callbacks.corewise_metrics.CorewiseMetrics
+  inv_threshold: 0.5

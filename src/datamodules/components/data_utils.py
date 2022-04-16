@@ -3,6 +3,8 @@ import pickle
 
 import numpy as np
 import pandas as pd
+
+from PIL import Image
 from einops import rearrange
 from mat73 import loadmat as loadmat73
 from scipy.io import matlab
@@ -23,11 +25,11 @@ def load_pickle(filename):
         return pickle.load(fp)
 
 
-def to_categorical(y):
-    n_classes = np.max(y) + 1
-    y_c = np.zeros((len(y), np.int(n_classes)))
-    for i in range(len(y)):
-        y_c[i, np.int(y[i])] = 1
+def to_categorical(target):
+    n_classes = np.max(target) + 1
+    y_c = np.zeros((len(target), np.int(n_classes)))
+    for i in range(len(target)):
+        y_c[i, np.int(target[i])] = 1
     return y_c.astype(int)
 
 
@@ -168,3 +170,10 @@ def get_data_roots(data_dir):
         # list_all_files.append(file_dir)
         list_all_roots.append(root)
     return list_all_roots
+
+
+def resize_norm(patch):
+    # interpolation and normalization of patch
+    patch_resized = np.array(Image.fromarray(patch).resize((256, 256)))
+    return (patch_resized - np.mean(patch_resized, keepdims=True))/np.std(patch_resized, keepdims=True)
+    # return patch_resized
