@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "1st-test_coreacc"
+name: "aug-erasing"
 
 seed: 12345
 
@@ -34,6 +34,9 @@ datamodule:
     patch_sz: 5 # patch size in mm
     jump_sz: 1 # jump of each patch to create next patch
     inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val
+    # list of applied augmentations ['RandomInvert', 'RandomVerticalFlip', 'RandomHorizontalFlip', 'RandomAffine', 'RandomErasing', 'RandomEqualize']
+    aug_list: []
+    aug_prob: 0.2 # probability of augmentations
 
 model:
   lr: 0.0001

@@ -3,8 +3,8 @@ from itertools import product
 import numpy as np
 from ismember import ismember
 
-from pytorch_lightning.core.mixins import HyperparametersMixin
 from torch.utils.data import Dataset
+from pytorch_lightning.core.mixins import HyperparametersMixin
 
 from .data_utils import *
 
@@ -16,14 +16,17 @@ class ExactDataset(Dataset, HyperparametersMixin):
             self,
             state: str,
             dataset_hyp: dict,
-            extended_metadata: dict):
+            extended_metadata: dict
+    ):
         super().__init__()
 
         """
         # save all input parameters in hparams including:
-        #   # inv_cutoff = dataset_hyp.inv_cutoff
-        #   # patch_sz = dataset_hyp.patch_sz
-        #   # jump_sz = dataset_hyp.jump_sz
+        #   dataset_hyp.inv_cutoff
+        #   dataset_hyp.patch_sz
+        #   dataset_hyp.jump_sz
+        #   dataset_hyp.aug_list
+        #   dataset_hyp.aug_prob
 
         #   # extended_metadata.meta_data
         #   # extended_metadata.patch_centers_sl
@@ -47,6 +50,9 @@ class ExactDataset(Dataset, HyperparametersMixin):
         self.core_labels = extended_metadata.meta_data[f'label_{self.hparams.state}']
         self.labels = [self.core_labels[ind] for i, ind in enumerate(self.ind_RFimg)]
         # self.labels = to_categorical(self.label)
+
+        # augmentation
+        self.transforms = aug_transforms(state, dataset_hyp.aug_list, p=dataset_hyp.aug_prob)
 
     def find_len_and_centers(self):
         """finds the names of central patches and len of that which correspond to len of data since
@@ -150,6 +156,9 @@ class ExactDataset(Dataset, HyperparametersMixin):
 
     def __getitem__(self, index):
         x_patch, y_target = self.get_img_target(index)
+
+        # apply transformations to x_patch
+        x_patch = apply_transforms(x_patch, self.transforms) if self.transforms is not None else x_patch
 
         return x_patch, y_target
 

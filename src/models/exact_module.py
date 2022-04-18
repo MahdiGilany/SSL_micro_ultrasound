@@ -151,7 +151,7 @@ class ExactLitModule(LightningModule):
 
         n_epochs = self.trainer.max_epochs
         len_ds = len(self.trainer.datamodule.train_ds)
-        steps_per_epoch = int(len_ds / self.hparams.batch_size)
+        steps_per_epoch = int(len_ds / self.hparams.batch_size) + 1
 
         self.optimizer = trch_opt.NovoGrad(self.parameters(), lr=float(self.hparams.lr),
                                            weight_decay=self.hparams.weight_decay)

@@ -10,6 +10,8 @@ from mat73 import loadmat as loadmat73
 from scipy.io import matlab
 from sklearn.model_selection import GroupShuffleSplit
 
+from torchvision.transforms import transforms
+
 
 def load_matlab(filename):
     with open(filename, 'rb') as fp:
@@ -175,5 +177,45 @@ def get_data_roots(data_dir):
 def resize_norm(patch):
     # interpolation and normalization of patch
     patch_resized = np.array(Image.fromarray(patch).resize((256, 256)))
-    return (patch_resized - np.mean(patch_resized, keepdims=True))/np.std(patch_resized, keepdims=True)
+    patch = (patch_resized - np.mean(patch_resized, keepdims=True)) / np.std(patch_resized, keepdims=True)
+
+    # truncating patches to bring them to [0,1]
+    patch[patch >= 4] = 4.
+    patch[patch <= -4] = -4.
+    return (patch - patch.min()) / (patch.max() - patch.min())
+    # return (patch_resized - 0.24708273)/848.8191
     # return patch_resized
+
+
+def aug_transforms(state, aug_list, p=.5):
+    if state != 'train' or len(aug_list) == 0:
+        return None
+
+    aug_transforms = [transforms.ToTensor()]
+    for i, aug in enumerate(aug_list):
+        if aug == 'RandomInvert':
+            aug_transforms.append(transforms.RandomInvert(p))
+        elif aug == 'RandomVerticalFlip':
+            aug_transforms.append(transforms.RandomVerticalFlip(p))
+        elif aug == 'RandomHorizontalFlip':
+            aug_transforms.append(transforms.RandomHorizontalFlip(p))
+        elif aug == 'RandomAffine':
+            aug_transforms.append(transforms.RandomAffine(degrees=(0, 0), translate=(0.3, 0.3), fill=0.5))
+        elif aug == 'RandomEqualize':
+            aug_transforms.append(transforms.RandomEqualize(p))
+        elif aug == 'RandomErasing':
+            aug_transforms.append(transforms.RandomErasing(p=p, scale=(0.01, 0.05), ratio=(0.3, 3.3), value=.5))
+
+        return transforms.Compose(aug_transforms)
+
+
+def apply_transforms(patch, transforms):
+    patch = rearrange(patch, 'c h w -> h w c')
+    #
+    # # truncating patches to bring them to [0,1]
+    # patch[patch >= 4] = 4.
+    # patch[patch <= -4] = -4.
+    # patch = (patch - patch.min()) / (patch.max() - patch.min())
+
+    patch = transforms(patch)
+    return patch
