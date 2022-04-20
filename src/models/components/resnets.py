@@ -388,7 +388,7 @@ def resnet18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress,
                    **kwargs)
 
-def resnet10(pretrained: bool = False, progress: bool = True, drop_rate='none', **kwargs: Any):
+def resnet10(pretrained: bool = False, progress: bool = False, drop_rate='none', **kwargs: Any):
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
 

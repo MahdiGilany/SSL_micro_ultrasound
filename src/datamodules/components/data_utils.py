@@ -206,7 +206,7 @@ def aug_transforms(state, aug_list, p=.5):
         elif aug == 'RandomErasing':
             aug_transforms.append(transforms.RandomErasing(p=p, scale=(0.01, 0.05), ratio=(0.3, 3.3), value=.5))
 
-        return transforms.Compose(aug_transforms)
+    return transforms.Compose(aug_transforms)
 
 
 def apply_transforms(patch, transforms):

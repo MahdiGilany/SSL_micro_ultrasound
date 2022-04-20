@@ -27,6 +27,7 @@ class ExactDataset(Dataset, HyperparametersMixin):
         #   dataset_hyp.jump_sz
         #   dataset_hyp.aug_list
         #   dataset_hyp.aug_prob
+        #   dataset_hyp.SSL
 
         #   # extended_metadata.meta_data
         #   # extended_metadata.patch_centers_sl
@@ -158,9 +159,13 @@ class ExactDataset(Dataset, HyperparametersMixin):
         x_patch, y_target = self.get_img_target(index)
 
         # apply transformations to x_patch
-        x_patch = apply_transforms(x_patch, self.transforms) if self.transforms is not None else x_patch
+        x_patch1 = apply_transforms(x_patch, self.transforms) if self.transforms is not None else x_patch
 
-        return x_patch, y_target
+        if self.hparams.dataset_hyp.SSL and self.transforms is not None:
+            x_patch2 = apply_transforms(x_patch, self.transforms)
+            return [x_patch1, x_patch2], y_target
+
+        return x_patch1, y_target
 
     def get_img_target(self, index):
         # name of central patch that should be used for creating the whole patch

@@ -12,6 +12,7 @@ split_randomstate: 26 # random state for above random split
 sampler: True # Dataloader train sampler to use or not
 
 dataset_hyp: # dataset hyperparameters
+  SSL: False # if in SSL mode or not
   patch_sz: 5 # patch size in mm
   jump_sz: 1 # jump of each patch to create next patch
   inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val
