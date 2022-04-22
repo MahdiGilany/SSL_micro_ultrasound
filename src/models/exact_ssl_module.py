@@ -81,14 +81,15 @@ class ExactSSLModule(LightningModule):
         self.max_epochs = epoch
         self.batch_size = batch_size
         self.optimizer = 'adam'
-        self.lars = False
         self.lr = lr
-        self.weight_decay = weight_decay
         self.classifier_lr = 0.5
-        self.exclude_bias_n_norm = True
+        self.weight_decay = weight_decay
         self.accumulate_grad_batches = 0
-        self.extra_optimizer_args = {}
         self.scheduler = "warmup_cosine"
+
+        self.lars = False
+        self.exclude_bias_n_norm = True
+        self.extra_optimizer_args = {}
         self.lr_decay_steps = [60, 80]
         self.min_lr = 0.0
         self.warmup_start_lr = 0.0
