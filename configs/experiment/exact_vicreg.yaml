@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "test_vicreg"
+name: "test_vicreg_adam"
 
 seed: 12345
 
@@ -36,14 +36,19 @@ datamodule:
     jump_sz: 1 # jump of each patch to create next patch
     inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val
     # list of applied augmentations ['RandomInvert', 'RandomVerticalFlip', 'RandomHorizontalFlip', 'RandomAffine', 'RandomErasing', 'RandomEqualize']
-    aug_list: ['RandomVerticalFlip', 'RandomHorizontalFlip', 'RandomAffine', 'RandomErasing']
-    aug_prob: 0.1 # probability of augmentations
+    aug_list:
+      [
+        "RandomVerticalFlip",
+        "RandomHorizontalFlip",
+        "RandomAffine",
+        "RandomErasing",
+      ]
+    aug_prob: 0.2 # probability of augmentations
 
 model:
-  _target_: src.models.exact_ssl_module.VICReg
   lr: 0.0001
-  batch_size: ${datamodule.batch_size}
   # method specific parameters
+  _target_: src.models.exact_ssl_module.VICReg
   proj_output_dim: 512
   proj_hidden_dim: 512
   sim_loss_weight: 25.

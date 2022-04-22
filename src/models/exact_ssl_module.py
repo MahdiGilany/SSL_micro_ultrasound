@@ -1,26 +1,26 @@
 import warnings
-from functools import partial
 from argparse import ArgumentParser
+from functools import partial
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
-import wandb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_optimizer as trch_opt
+import wandb
+from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
+from pytorch_lightning import LightningModule
 from torch.optim.lr_scheduler import MultiStepLR
-from torchvision.models import resnet18, resnet50
 from torchmetrics import MaxMetric
 from torchmetrics.classification.accuracy import Accuracy
 from torchmetrics.classification.confusion_matrix import ConfusionMatrix
+from torchvision.models import resnet18, resnet50
 
-from pytorch_lightning import LightningModule
-from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
-
+from src.models.components.backbones import *
 from src.models.components.simple_dense_net import SimpleDenseNet
 from src.models.components.utils import LARSWrapper, weighted_mean
-from src.models.components.backbones import *
 from src.models.components.vicreg_loss import vicreg_loss_func
+
 
 def static_lr(
     get_lr: Callable, param_group_indexes: Sequence[int], lrs_to_replace: Sequence[float]
@@ -56,6 +56,7 @@ class ExactSSLModule(LightningModule):
         backbone: str,
         lr: float = 0.0001,
         weight_decay: float = 0.000,
+        epoch: int = 100,
         batch_size: int = 32,
     ):
         super().__init__()
@@ -77,10 +78,10 @@ class ExactSSLModule(LightningModule):
 
         # training related
         self.num_classes = 2
-        self.max_epochs = 100 #self.trainer.max_epochs
+        self.max_epochs = epoch
         self.batch_size = batch_size
-        self.optimizer = 'sgd'
-        self.lars = True
+        self.optimizer = 'adam'
+        self.lars = False
         self.lr = lr
         self.weight_decay = weight_decay
         self.classifier_lr = 0.5
@@ -132,8 +133,8 @@ class ExactSSLModule(LightningModule):
             )
 
     def forward(self, X) -> Dict:
-        """Basic forward method. Children methods should call this function,
-        modify the ouputs (without deleting anything) and return it.
+        """Basic forward method. Children methods should call this function, modify the ouputs
+        (without deleting anything) and return it.
 
         Args:
             X (torch.Tensor): batch of images in tensor format.
@@ -207,11 +208,11 @@ class ExactSSLModule(LightningModule):
         outs["loss"] = sum(outs["loss"]) / self.num_large_crops
         outs["acc"] = sum(outs["acc"]) / self.num_large_crops
 
-        self.log("train/linear-loss", outs["loss"], on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
-        self.log("train/linear-acc", outs["acc"], on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log("train/ssl/linear-loss", outs["loss"], on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
+        self.log("train/ssl/linear-acc", outs["acc"], on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
 
         if self.scheduler is not None:
-            lr = self.scheduler.get_last_lr()
+            lr = self.scheduler_obj.get_last_lr()
             self.log("lr", lr[0], on_step=False, on_epoch=True, prog_bar=False)
 
         return outs
@@ -240,9 +241,8 @@ class ExactSSLModule(LightningModule):
         return {"loss": outs["loss"], "acc": outs["acc"], "batch_size": batch_size}
 
     def validation_epoch_end(self, outs: List[Dict[str, Any]]):
-        """Averages the losses and accuracies of all the validation batches.
-        This is needed because the last batch can be smaller than the others,
-        slightly skewing the metrics.
+        """Averages the losses and accuracies of all the validation batches. This is needed because
+        the last batch can be smaller than the others, slightly skewing the metrics.
 
         Args:
             outs (List[Dict[str, Any]]): list of outputs of the validation step.
@@ -254,15 +254,20 @@ class ExactSSLModule(LightningModule):
         test_loss = weighted_mean(outs[1], "loss", "batch_size")
         test_acc = weighted_mean(outs[1], "acc", "batch_size")
 
-        self.log("val/ss/linear-loss", val_loss, on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
+        self.log("val/ssl/linear-loss", val_loss, on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
         self.log("val/ssl/linear-acc", val_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
 
         self.val_acc_best.update(val_acc)
-        self.log("val/ssl/linear-acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True,
+        self.log("val/ssl/linear-acc_best", self.val_acc_best.compute(), on_step=False, on_epoch=True, prog_bar=True,
                  sync_dist=True)
 
         self.log("test/ssl/linear-loss", test_loss, on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
         self.log("test/ssl/linear-acc", test_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+
+    def on_epoch_end(self):
+        # reset metrics after sanity checks'
+        if self.trainer.sanity_checking:
+            self.val_acc_best.reset()
 
     @property
     def num_training_steps(self) -> int:
@@ -347,8 +352,10 @@ class ExactSSLModule(LightningModule):
                 "interval": self.scheduler_interval,
                 "frequency": 1,
             }
+            self.scheduler_obj = scheduler["scheduler"]
         elif self.scheduler == "step":
             scheduler = MultiStepLR(optimizer, self.lr_decay_steps)
+            self.scheduler_obj = scheduler
         else:
             raise ValueError(f"{self.scheduler} not in (warmup_cosine, cosine, step)")
 
