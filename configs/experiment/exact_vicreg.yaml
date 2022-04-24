@@ -14,9 +14,9 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "vicreg_adam_res50"
+name: "vicreg_adam"
 
-seed: 1243
+seed: 12345
 
 trainer:
   min_epochs: 100
@@ -48,7 +48,7 @@ datamodule:
 
 model:
   lr: 0.0001
-  backbone: resnet50
+  backbone: resnet10
   # method specific parameters
   _target_: src.models.exact_ssl_module.VICReg
   proj_output_dim: 512

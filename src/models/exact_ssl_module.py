@@ -268,7 +268,7 @@ class ExactSSLModule(LightningModule):
         self.log("test/ssl/linear-loss", test_loss, on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
         self.log("test/ssl/linear-acc", test_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
 
-    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int):
+    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0):
         pass
 
     def on_epoch_end(self):
