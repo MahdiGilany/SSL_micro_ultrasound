@@ -14,7 +14,6 @@ from torch.optim.lr_scheduler import MultiStepLR
 from torchmetrics import MaxMetric
 from torchmetrics.classification.accuracy import Accuracy
 from torchmetrics.classification.confusion_matrix import ConfusionMatrix
-from torchvision.models import resnet18, resnet50
 
 from src.models.components.backbones import *
 from src.models.components.simple_dense_net import SimpleDenseNet
@@ -84,7 +83,7 @@ class ExactSSLModule(LightningModule):
         self.lr = lr
         self.classifier_lr = 0.5
         self.weight_decay = weight_decay
-        self.accumulate_grad_batches = 0
+        self.accumulate_grad_batches = 0 # todo: check larger batch size.
         self.scheduler = "warmup_cosine"
 
         self.lars = False
@@ -170,7 +169,7 @@ class ExactSSLModule(LightningModule):
         acc = self.acc_obj(torch.argmax(logits, dim=1), targets)
         self.acc_obj.reset()
 
-        out.update({"loss": loss, "acc": acc})
+        out.update({"loss": loss, "acc": acc, "logits": logits})
         return out
 
     def training_step(self, batch: Any, batch_idx: int):
@@ -239,7 +238,7 @@ class ExactSSLModule(LightningModule):
         # elif dataloader_idx == 1:
         # #     log test metrics
 
-        return {"loss": outs["loss"], "acc": outs["acc"], "batch_size": batch_size}
+        return {"loss": outs["loss"], "acc": outs["acc"], "logits": outs["logits"], "batch_size": batch_size}
 
     def validation_epoch_end(self, outs: List[Dict[str, Any]]):
         """Averages the losses and accuracies of all the validation batches. This is needed because
@@ -255,6 +254,10 @@ class ExactSSLModule(LightningModule):
         test_loss = weighted_mean(outs[1], "loss", "batch_size")
         test_acc = weighted_mean(outs[1], "acc", "batch_size")
 
+        # saving all preds for corewise callback: val and test
+        self.all_val_preds = torch.cat([i['logits'] for i in outs[0]], dim=0).argmax(dim=1).detach().cpu().numpy()
+        self.all_test_preds = torch.cat([i['logits'] for i in outs[1]], dim=0).argmax(dim=1).detach().cpu().numpy()
+
         self.log("val/ssl/linear-loss", val_loss, on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
         self.log("val/ssl/linear-acc", val_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
 
@@ -264,6 +267,9 @@ class ExactSSLModule(LightningModule):
 
         self.log("test/ssl/linear-loss", test_loss, on_step=False, on_epoch=True, prog_bar=False, sync_dist=True)
         self.log("test/ssl/linear-acc", test_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+
+    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int):
+        pass
 
     def on_epoch_end(self):
         # reset metrics after sanity checks'

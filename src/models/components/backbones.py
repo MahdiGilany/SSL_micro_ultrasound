@@ -9,11 +9,15 @@ from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, trunc_normal_
 from timm.models.layers.helpers import to_2tuple
 from timm.models.registry import register_model
+
 # from timm.models.convnext import _create_convnext
 from timm.models.swin_transformer import _create_swin_transformer
 from timm.models.vision_transformer import _create_vision_transformer
 
 from src.models.components.resnets import resnet10 as _create_resnet10
+from src.models.components.resnets import resnet18 as _create_resnet18
+from src.models.components.resnets import resnet50 as _create_resnet50
+
 
 @register_model
 def swin_tiny(window_size=7, **kwargs):
@@ -154,8 +158,8 @@ default_cfgs = {
 
 
 class PatchEmbed(nn.Module):
-    """
-    Patch Embedding that is implemented by a layer of conv.
+    """Patch Embedding that is implemented by a layer of conv.
+
     Input: tensor in shape [B, C, H, W]
     Output: tensor in shape [B, C, H/stride, W/stride]
     """
@@ -179,8 +183,8 @@ class PatchEmbed(nn.Module):
 
 
 class LayerNormChannel(nn.Module):
-    """
-    LayerNorm only for Channel Dimension.
+    """LayerNorm only for Channel Dimension.
+
     Input: tensor in shape [B, C, H, W]
     """
 
@@ -199,8 +203,8 @@ class LayerNormChannel(nn.Module):
 
 
 class GroupNorm(nn.GroupNorm):
-    """
-    Group Normalization with 1 group.
+    """Group Normalization with 1 group.
+
     Input: tensor in shape [B, C, H, W]
     """
 
@@ -209,8 +213,8 @@ class GroupNorm(nn.GroupNorm):
 
 
 class Pooling(nn.Module):
-    """
-    Implementation of pooling for PoolFormer
+    """Implementation of pooling for PoolFormer.
+
     --pool_size: pooling size
     """
 
@@ -225,8 +229,8 @@ class Pooling(nn.Module):
 
 
 class Mlp(nn.Module):
-    """
-    Implementation of MLP with 1*1 convolutions.
+    """Implementation of MLP with 1*1 convolutions.
+
     Input: tensor with shape [B, C, H, W]
     """
 
@@ -258,8 +262,8 @@ class Mlp(nn.Module):
 
 
 class PoolFormerBlock(nn.Module):
-    """
-    Implementation of one PoolFormer block.
+    """Implementation of one PoolFormer block.
+
     --dim: embedding dim
     --pool_size: pooling size
     --mlp_ratio: mlp expansion ratio
@@ -359,8 +363,8 @@ def basic_blocks(
 
 
 class PoolFormer(nn.Module):
-    """
-    PoolFormer, the main class of our model
+    """PoolFormer, the main class of our model.
+
     --layers: [x,x,x,x], number of blocks for the 4 stages
     --embed_dims, --mlp_ratios, --pool_size: the embedding dims, mlp ratios and
         pooling size for the 4 stages
@@ -457,7 +461,9 @@ class PoolFormer(nn.Module):
             for i_emb, i_layer in enumerate(self.out_indices):
                 if i_emb == 0 and os.environ.get("FORK_LAST3", None):
                     # TODO: more elegant way
-                    """For RetinaNet, `start_level=1`. The first norm layer will not used.
+                    """For RetinaNet, `start_level=1`.
+
+                    The first norm layer will not used.
                     cmd: `FORK_LAST3=1 python -m torch.distributed.launch ...`
                     """
                     layer = nn.Identity()
@@ -525,8 +531,8 @@ class PoolFormer(nn.Module):
 
 @register_model
 def poolformer_s12(**kwargs):
-    """
-    PoolFormer-S12 model, Params: 12M
+    """PoolFormer-S12 model, Params: 12M.
+
     --layers: [x,x,x,x], numbers of layers for the four stages
     --embed_dims, --mlp_ratios:
         embedding dims and mlp ratios for the four stages
@@ -550,9 +556,7 @@ def poolformer_s12(**kwargs):
 
 @register_model
 def poolformer_s24(**kwargs):
-    """
-    PoolFormer-S24 model, Params: 21M
-    """
+    """PoolFormer-S24 model, Params: 21M."""
     layers = [4, 4, 12, 4]
     embed_dims = [64, 128, 320, 512]
     mlp_ratios = [4, 4, 4, 4]
@@ -571,9 +575,7 @@ def poolformer_s24(**kwargs):
 
 @register_model
 def poolformer_s36(**kwargs):
-    """
-    PoolFormer-S36 model, Params: 31M
-    """
+    """PoolFormer-S36 model, Params: 31M."""
     layers = [6, 6, 18, 6]
     embed_dims = [64, 128, 320, 512]
     mlp_ratios = [4, 4, 4, 4]
@@ -593,9 +595,7 @@ def poolformer_s36(**kwargs):
 
 @register_model
 def poolformer_m36(**kwargs):
-    """
-    PoolFormer-M36 model, Params: 56M
-    """
+    """PoolFormer-M36 model, Params: 56M."""
     layers = [6, 6, 18, 6]
     embed_dims = [96, 192, 384, 768]
     mlp_ratios = [4, 4, 4, 4]
@@ -615,9 +615,7 @@ def poolformer_m36(**kwargs):
 
 @register_model
 def poolformer_m48(**kwargs):
-    """
-    PoolFormer-M48 model, Params: 73M
-    """
+    """PoolFormer-M48 model, Params: 73M."""
     layers = [8, 8, 24, 8]
     embed_dims = [96, 192, 384, 768]
     mlp_ratios = [4, 4, 4, 4]
@@ -667,4 +665,18 @@ def poolformer_m48(**kwargs):
 def resnet10(**kwargs):
     model_args = dict(**kwargs)
     model = _create_resnet10(num_classes=0, in_channels=1, **model_args)
+    return model
+
+
+@register_model
+def resnet18(**kwargs):
+    model_args = dict(**kwargs)
+    model = _create_resnet18(num_classes=0, in_channels=1, **model_args)
+    return model
+
+
+@register_model
+def resnet50(**kwargs):
+    model_args = dict(**kwargs)
+    model = _create_resnet50(num_classes=0, in_channels=1, **model_args)
     return model

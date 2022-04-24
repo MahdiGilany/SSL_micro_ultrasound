@@ -364,7 +364,7 @@ def _resnet(
     layers: List[int],
     pretrained: bool,
     progress: bool,
-    drop_rate,
+    drop_rate='none',
     **kwargs: Any
 ):
     model = ResNet(block, layers, **kwargs)
@@ -376,6 +376,17 @@ def _resnet(
         return DropoutResnet(source_resnet=model, dropout_rate=drop_rate)
     return model
 
+
+def resnet50(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ResNet:
+    r"""ResNet-18 model from
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _resnet('resnet50', BasicBlock, [3, 4, 6, 3], pretrained, progress,
+                   **kwargs)
 
 def resnet18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ResNet:
     r"""ResNet-18 model from

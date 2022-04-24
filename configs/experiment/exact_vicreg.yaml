@@ -14,9 +14,9 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "test_vicreg_adam"
+name: "vicreg_adam_res50"
 
-seed: 12345
+seed: 1243
 
 trainer:
   min_epochs: 100
@@ -38,6 +38,7 @@ datamodule:
     # list of applied augmentations ['RandomInvert', 'RandomVerticalFlip', 'RandomHorizontalFlip', 'RandomAffine', 'RandomErasing', 'RandomEqualize']
     aug_list:
       [
+#        "RandomInvert",
         "RandomVerticalFlip",
         "RandomHorizontalFlip",
         "RandomAffine",
@@ -47,6 +48,7 @@ datamodule:
 
 model:
   lr: 0.0001
+  backbone: resnet50
   # method specific parameters
   _target_: src.models.exact_ssl_module.VICReg
   proj_output_dim: 512
@@ -57,5 +59,5 @@ model:
 
 logger:
   wandb:
-    name: ${name}_inv-cut${datamodule.dataset_hyp.inv_cutoff}_srs${datamodule.split_randomstate}_split${datamodule.train_val_split}
+    name: ${name}_srs${datamodule.split_randomstate}_split${datamodule.train_val_split}
     tags: ["exact", "test", "${name}"]

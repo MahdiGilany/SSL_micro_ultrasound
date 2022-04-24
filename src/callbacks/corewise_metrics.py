@@ -9,6 +9,9 @@ class CorewiseMetrics(Callback):
         self.inv_threshold = inv_threshold
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
+        # for the purpose of name of logging
+        self.pl_moduletype = str(type(pl_module))
+
         # computing corewise metrics and logging.
         corelen_val = trainer.datamodule.val_ds.all_corelen_sl
         corelen_test = trainer.datamodule.test_ds.all_corelen_sl
@@ -49,7 +52,13 @@ class CorewiseMetrics(Callback):
 
     def compute_metrics(self, preds, targets, state, scores={}):
         ind = np.minimum(len(preds), len(targets), dtype='int')
-        scores[state + '/' + 'acc/core-micro'] = np.sum((preds>=self.inv_threshold) == targets[:ind])/len(targets[:ind])
+        core_micro_acc = np.sum((preds >= self.inv_threshold) == targets[:ind]) / len(targets[:ind])
+
+        # save differently if SSL is True
+        if 'ssl' in self.pl_moduletype:
+            scores[state + '/' + 'ssl/core-micro'] = core_micro_acc
+        else:
+            scores[state + '/' + 'acc/core-micro'] = core_micro_acc
         return scores
 
     def log_scores(self, scores, pl_module):
