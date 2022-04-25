@@ -55,7 +55,7 @@ class CorewiseMetrics(Callback):
         core_micro_acc = np.sum((preds >= self.inv_threshold) == targets[:ind]) / len(targets[:ind])
 
         # save differently if SSL is True
-        if 'ssl' in self.pl_moduletype:
+        if 'self_supervised' in self.pl_moduletype:
             scores[state + '/' + 'ssl/core-micro'] = core_micro_acc
         else:
             scores[state + '/' + 'acc/core-micro'] = core_micro_acc
