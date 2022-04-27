@@ -3,13 +3,11 @@ import pickle
 
 import numpy as np
 import pandas as pd
-
-from PIL import Image
 from einops import rearrange
 from mat73 import loadmat as loadmat73
+from PIL import Image
 from scipy.io import matlab
 from sklearn.model_selection import GroupShuffleSplit
-
 from torchvision.transforms import transforms
 
 
@@ -188,7 +186,9 @@ def resize_norm(patch):
 
 
 def aug_transforms(state, aug_list, p=.5):
-    if state != 'train' or len(aug_list) == 0:
+    # for old online eval
+    # if state != 'train' or len(aug_list) == 0:
+    if len(aug_list) == 0:
         return None
 
     aug_transforms = [transforms.ToTensor()]

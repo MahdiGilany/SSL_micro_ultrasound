@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple
 
 import torch
 import torch.nn as nn
+import wandb
 
 from src.models.components.backbones import *
 
@@ -85,11 +86,10 @@ class VICReg(ExactSSLModule):
         """
 
         out = super().training_step(batch, batch_idx)
-        class_loss = out["loss"]
         z1, z2 = out["z"]
 
         # ------- vicreg loss -------
-        vicreg_loss = vicreg_loss_func(
+        vicreg_loss, all_loss = vicreg_loss_func(
             z1,
             z2,
             sim_loss_weight=self.sim_loss_weight,
@@ -98,5 +98,45 @@ class VICReg(ExactSSLModule):
         )
 
         self.log("train/ssl/vicreg_loss", vicreg_loss, on_step=False, on_epoch=True, sync_dist=True)
+        self.log("train/ssl/sim_loss", all_loss[0], on_step=False, on_epoch=True, sync_dist=True)
+        self.log("train/ssl/var_loss", all_loss[1], on_step=False, on_epoch=True, sync_dist=True)
+        self.log("train/ssl/cov_loss", all_loss[2], on_step=False, on_epoch=True, sync_dist=True)
 
-        return vicreg_loss + class_loss
+        return vicreg_loss
+
+    def validation_step(self, batch: Sequence[Any], batch_idx: int, dataloader_idx: int) -> torch.Tensor:
+        """Validation step for VICReg reusing BaseMethod validation step.
+
+        Args:
+            batch (Sequence[Any]): a batch of data in the format of [img_indexes, [X], Y], where
+                [X] is a list of size num_crops containing batches of images.
+            batch_idx (int): index of the batch.
+
+        Returns:
+            torch.Tensor: total loss composed of VICReg loss and classification loss.
+        """
+
+        out = super().validation_step(batch, batch_idx, dataloader_idx)
+        z1, z2 = out["z"]
+
+        # ------- vicreg loss -------
+        vicreg_loss, all_loss = vicreg_loss_func(
+            z1,
+            z2,
+            sim_loss_weight=self.sim_loss_weight,
+            var_loss_weight=self.var_loss_weight,
+            cov_loss_weight=self.cov_loss_weight,
+        )
+
+        if dataloader_idx == 0:
+            self.log("val/ssl/vicreg_loss", vicreg_loss, on_step=False, on_epoch=True, sync_dist=True)
+            self.log("val/ssl/sim_loss", all_loss[0], on_step=False, on_epoch=True, sync_dist=True)
+            self.log("val/ssl/var_loss", all_loss[1], on_step=False, on_epoch=True, sync_dist=True)
+            self.log("val/ssl/cov_loss", all_loss[2], on_step=False, on_epoch=True, sync_dist=True)
+        elif dataloader_idx == 1:
+            self.log("test/ssl/vicreg_loss", vicreg_loss, on_step=False, on_epoch=True, sync_dist=True)
+            self.log("test/ssl/sim_loss", all_loss[0], on_step=False, on_epoch=True, sync_dist=True)
+            self.log("test/ssl/var_loss", all_loss[1], on_step=False, on_epoch=True, sync_dist=True)
+            self.log("test/ssl/cov_loss", all_loss[2], on_step=False, on_epoch=True, sync_dist=True)
+
+        return vicreg_loss

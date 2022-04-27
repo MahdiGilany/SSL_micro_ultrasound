@@ -1,7 +1,9 @@
 # From solo-learn development team.
+from typing import Tuple
 
 import torch
 import torch.nn.functional as F
+from torch import Tensor
 
 from src.models.components.utils import gather
 
@@ -70,7 +72,7 @@ def vicreg_loss_func(
     sim_loss_weight: float = 25.0,
     var_loss_weight: float = 25.0,
     cov_loss_weight: float = 1.0,
-) -> torch.Tensor:
+) -> Tuple[Tensor, Tuple[Tensor, Tensor, Tensor]]:
     """Computes VICReg's loss given batch of projected features z1 from view 1 and projected
     features z2 from view 2.
 
@@ -95,4 +97,5 @@ def vicreg_loss_func(
     cov_loss = covariance_loss(z1, z2)
 
     loss = sim_loss_weight * sim_loss + var_loss_weight * var_loss + cov_loss_weight * cov_loss
-    return loss
+    return loss, (sim_loss, var_loss, cov_loss)
+    # return loss # for old online eval

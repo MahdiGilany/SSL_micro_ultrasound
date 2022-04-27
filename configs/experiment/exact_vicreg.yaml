@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "vicreg_adam_org"
+name: "vicreg_online-eval-augpr.4"
 
 seed: 12345
 
@@ -44,7 +44,7 @@ datamodule:
         "RandomAffine",
         "RandomErasing",
       ]
-    aug_prob: 0.2 # probability of augmentations
+    aug_prob: 0.4 # probability of augmentations
 
 model:
   lr: 0.0001

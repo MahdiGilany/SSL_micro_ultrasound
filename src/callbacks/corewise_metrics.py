@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from pytorch_lightning.callbacks import Callback
 
 
@@ -8,6 +9,7 @@ class CorewiseMetrics(Callback):
         # threshold to consider a predicted involvement as cancer
         self.inv_threshold = inv_threshold
 
+    # todo: all information that is assumed to be available can be obtained in on_validation_batch_end...
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         # for the purpose of name of logging
         self.pl_moduletype = str(type(pl_module))
@@ -17,8 +19,10 @@ class CorewiseMetrics(Callback):
         corelen_test = trainer.datamodule.test_ds.all_corelen_sl
 
         # all preds in order
-        all_val_preds = pl_module.all_val_preds
-        all_test_preds = pl_module.all_test_preds
+        all_val_logits = torch.cat(pl_module.all_val_online_logits)
+        all_test_logits = torch.cat(pl_module.all_test_online_logits)
+        all_val_preds = all_val_logits.argmax(dim=1).detach().cpu().numpy()
+        all_test_preds = all_test_logits.argmax(dim=1).detach().cpu().numpy()
 
         # all core labels
         all_val_coretargets = trainer.datamodule.val_ds.core_labels
