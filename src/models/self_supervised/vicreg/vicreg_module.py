@@ -15,9 +15,9 @@ class VICReg(ExactSSLModule):
         self,
         proj_output_dim: int,
         proj_hidden_dim: int,
-        sim_loss_weight: float,
-        var_loss_weight: float,
-        cov_loss_weight: float,
+        sim_loss_weight: float = 25.,
+        var_loss_weight: float = 25.,
+        cov_loss_weight: float = 25.,
         **kwargs
     ):
         """Implements VICReg (https://arxiv.org/abs/2105.04906)
@@ -69,6 +69,11 @@ class VICReg(ExactSSLModule):
         """
 
         out = super().forward(X)
+
+        # for applications that need feature vector only
+        if not self.training:
+            return out
+
         z = self.projector(out["feats"])
         out.update({"z": z})
         return out

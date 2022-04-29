@@ -53,7 +53,8 @@ class ExactDataset(Dataset, HyperparametersMixin):
         # self.labels = to_categorical(self.label)
 
         # augmentation
-        self.transforms = aug_transforms(state, dataset_hyp.aug_list, p=dataset_hyp.aug_prob)
+        self.transforms = aug_transforms(state, dataset_hyp.aug_list, p=dataset_hyp.aug_prob)\
+            if self.hparams.dataset_hyp.SSL else None
 
     def find_len_and_centers(self):
         """finds the names of central patches and len of that which correspond to len of data since
@@ -161,7 +162,7 @@ class ExactDataset(Dataset, HyperparametersMixin):
         # apply transformations to x_patch
         x_patch1 = apply_transforms(x_patch, self.transforms) if self.transforms is not None else x_patch
 
-        if self.hparams.dataset_hyp.SSL and self.transforms is not None:
+        if self.transforms is not None:
             x_patch2 = apply_transforms(x_patch, self.transforms)
             return [x_patch1, x_patch2], y_target
 

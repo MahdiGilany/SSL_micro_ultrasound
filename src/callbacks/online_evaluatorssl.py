@@ -12,7 +12,10 @@ from torchmetrics.functional import accuracy
 
 
 class ExactOnlineEval(SSLOnlineEvaluator):
-    """This class is mostly copy of its parent class with some small changes."""
+    """This class is mostly copy of its parent class with some small changes.
+        the model that uses this callback should fill pl_module.all_val_online_logits
+        and pl_module.all_test_online_logits at each step.
+    """
 
     def __init__(self, *args, **kwargs):
         """

@@ -4,6 +4,10 @@ from pytorch_lightning.callbacks import Callback
 
 
 class CorewiseMetrics(Callback):
+    """
+    This module assumes that the pl_module already has pl_module.all_val_online_logits which is all
+    the available validation logits.
+    """
     def __init__(self, inv_threshold: float = 0.5):
         super().__init__()
         # threshold to consider a predicted involvement as cancer
@@ -59,7 +63,9 @@ class CorewiseMetrics(Callback):
         core_micro_acc = np.sum((preds >= self.inv_threshold) == targets[:ind]) / len(targets[:ind])
 
         # save differently if SSL is True
-        if 'self_supervised' in self.pl_moduletype:
+        if 'finetune' in self.pl_moduletype: # todo change it soon
+            scores[state + '/' + 'finetune_core-micro'] = core_micro_acc
+        elif 'self_supervised' in self.pl_moduletype:
             scores[state + '/' + 'ssl/core-micro'] = core_micro_acc
         else:
             scores[state + '/' + 'acc/core-micro'] = core_micro_acc

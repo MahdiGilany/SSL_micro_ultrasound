@@ -188,8 +188,8 @@ def resize_norm(patch):
 def aug_transforms(state, aug_list, p=.5):
     # for old online eval
     # if state != 'train' or len(aug_list) == 0:
-    if len(aug_list) == 0:
-        return None
+    # if len(aug_list) == 0:
+    #     return None
 
     aug_transforms = [transforms.ToTensor()]
     for i, aug in enumerate(aug_list):
@@ -200,11 +200,11 @@ def aug_transforms(state, aug_list, p=.5):
         elif aug == 'RandomHorizontalFlip':
             aug_transforms.append(transforms.RandomHorizontalFlip(p))
         elif aug == 'RandomAffine':
-            aug_transforms.append(transforms.RandomAffine(degrees=(0, 0), translate=(0.3, 0.3), fill=0.5))
+            aug_transforms.append(transforms.RandomAffine(degrees=(0, 0), translate=(0.4, 0.4), fill=0.5))
         elif aug == 'RandomEqualize':
             aug_transforms.append(transforms.RandomEqualize(p))
         elif aug == 'RandomErasing':
-            aug_transforms.append(transforms.RandomErasing(p=p, scale=(0.01, 0.05), ratio=(0.3, 3.3), value=.5))
+            aug_transforms.append(transforms.RandomErasing(p=p, scale=(0.02, 0.07), ratio=(0.3, 3.3), value=.5))
 
     return transforms.Compose(aug_transforms)
 
