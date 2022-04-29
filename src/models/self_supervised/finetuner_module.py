@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
-from torchmetrics import Accuracy, MaxMetric
 from pl_bolts.models.self_supervised.ssl_finetuner import SSLFineTuner
 from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
+from torchmetrics import Accuracy, MaxMetric
 
 
 class ExactFineTuner(SSLFineTuner):
@@ -20,6 +20,9 @@ class ExactFineTuner(SSLFineTuner):
 
         # whether to do semi supervised or not
         self.semi_sup = semi_sup
+        if self.semi_sup:
+            self.backbone.train()
+
         self.warmup_epochs = 10
         self.warmup_start_lr = 0.0
         self._num_training_steps = None
@@ -108,8 +111,10 @@ class ExactFineTuner(SSLFineTuner):
         return self._num_training_steps
 
     def configure_optimizers(self):
+        opt_params = [{"params":self.linear_layer.parameters()}, {"params":self.backbone.parameters()}]\
+           if self.semi_sup else self.linear_layer.parameters()
         optimizer = torch.optim.Adam(
-            self.linear_layer.parameters(),
+            opt_params,
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
         )

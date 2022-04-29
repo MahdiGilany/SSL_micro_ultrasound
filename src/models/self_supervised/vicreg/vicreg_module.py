@@ -70,9 +70,9 @@ class VICReg(ExactSSLModule):
 
         out = super().forward(X)
 
-        # for applications that need feature vector only
-        if not self.training:
-            return out
+        # # for applications that need feature vector only
+        # if not self.training:
+        #     return out
 
         z = self.projector(out["feats"])
         out.update({"z": z})
