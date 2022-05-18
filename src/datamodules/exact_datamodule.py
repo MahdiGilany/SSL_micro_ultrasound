@@ -61,6 +61,7 @@ class ExactDataModule(LightningDataModule):
 
     @property
     def num_classes(self) -> int:
+        # todo: it should change based on problem
         return 2
 
     def prepare_data(self):

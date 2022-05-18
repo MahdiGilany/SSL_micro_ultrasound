@@ -164,6 +164,7 @@ def estimate_patchcenter(meta_data, dataset_hyp=None):
 def get_data_roots(data_dir):
     """finds roots of all data."""
     # list_all_files = []
+    data_dir = os.path.join(data_dir, 'patches1x1')
     list_all_roots = []
     for root, dir, files in os.walk(data_dir):
         # file_dir = [root+'\\'+ f for i, f in enumerate(files)]

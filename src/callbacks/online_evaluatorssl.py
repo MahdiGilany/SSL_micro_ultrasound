@@ -15,6 +15,12 @@ class ExactOnlineEval(SSLOnlineEvaluator):
     """This class is mostly copy of its parent class with some small changes.
         the model that uses this callback should fill pl_module.all_val_online_logits
         and pl_module.all_test_online_logits at each step.
+
+        Requirements:
+            - datamodule should have val_ds
+            - val_ds should have list of all labels in val_ds.label
+
+
     """
 
     def __init__(self, *args, **kwargs):

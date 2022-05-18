@@ -28,6 +28,9 @@ def static_lr(
 class ExactSSLModule(LightningModule):
     """Example of LightningModule for SSL Exact classification.
 
+    For using this module:
+        - datamodule should have object variable: train_ds
+
     A LightningModule organizes your PyTorch code into 5 sections:
         - Computations (init).
         - Train loop (training_step)

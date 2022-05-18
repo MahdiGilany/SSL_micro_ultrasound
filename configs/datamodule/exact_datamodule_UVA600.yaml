@@ -1,0 +1,39 @@
+_target_: src.datamodules.exact_datamodule_UVA600.ExactDataModuleUVA600
+
+data_directory: ${data_dir}/Exact/ # data_dir is specified in config.yaml
+# comment for later: C:\Users\Mahdi\Desktop\Shared_folder\OneDrive_Queens_University\Project_codes\SSLmicroUltrasound\data\Exact\
+
+batch_size: 32
+num_workers: 4
+mode: "self-supervised"
+needle_region_only: True
+inv_cutoff: 0.4
+
+
+resample_train_val: True
+resample_train_val_seed: 26
+train_val_ratio: 0.25
+needle_region_intersection_threshold: 0.7
+
+use_augmentations: False
+aug_prob: 0.5 # probability of augmentations
+
+random_erasing: True
+random_invert: True
+random_horizontal_flip: True
+random_vertical_flip: True
+random_affine_translation: [0.2, 0.2]
+random_affine_rotation: 0
+random_affine_shear: [0, 0, 0, 0]
+random_resized_crop: False
+random_resized_crop_scale: [0.7, 1]
+
+out_size: 256
+balance_classes_train: True
+balance_classes_eval: False
+normalize_mode: instance
+normalize_type: min-max
+normalize_truncate: True
+
+patch_size_mm: [5, 5]
+patch_stride_mm: [1, 1]

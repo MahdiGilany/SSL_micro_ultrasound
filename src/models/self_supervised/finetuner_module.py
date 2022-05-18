@@ -6,7 +6,9 @@ from torchmetrics import Accuracy, MaxMetric
 
 
 class ExactFineTuner(SSLFineTuner):
-
+    """
+    This class implements finetunjng ssl module. It attaches a neural net on top and trains it.
+    """
     def __init__(
             self,
             backbone: torch.nn.Module,

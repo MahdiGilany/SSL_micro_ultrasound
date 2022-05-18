@@ -41,7 +41,7 @@ class ExactDataset(Dataset, HyperparametersMixin):
 
         # finding len and name of patch centers in out dataset based on patch centers inside
         # needle for SL and inside the whole image in SSL (former not implemented yet)
-        self.len_ds, self.used_patch_names, self.all_corelen_sl = self.find_len_and_centers()
+        self.len_ds, self.used_patch_names, self.core_lengths = self.find_len_and_centers()
 
         # RF image index number for each of used patches (used_patch_names). These indexes can be used for
         # accessing information in meta data corresponding to train/test/val patches
@@ -222,7 +222,7 @@ class ExactDataset(Dataset, HyperparametersMixin):
 
     def patchind_to_RFimgind(self, index):
         # loading all corelen
-        corelen_sl = self.all_corelen_sl
+        corelen_sl = self.core_lengths
 
         # cumulative sum of corelen to find where index is located
         cumsum_corelen = np.cumsum(corelen_sl)

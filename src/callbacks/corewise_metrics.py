@@ -7,6 +7,11 @@ class CorewiseMetrics(Callback):
     """
     This module assumes that the pl_module already has pl_module.all_val_online_logits which is all
     the available validation logits.
+
+    Requirements:
+        - data module has to have val or test_ds.core_lengths
+        - data module has to have val or test_ds.core_labels
+
     """
     def __init__(self, inv_threshold: float = 0.5):
         super().__init__()
@@ -19,8 +24,8 @@ class CorewiseMetrics(Callback):
         self.pl_moduletype = str(type(pl_module))
 
         # computing corewise metrics and logging.
-        corelen_val = trainer.datamodule.val_ds.all_corelen_sl
-        corelen_test = trainer.datamodule.test_ds.all_corelen_sl
+        corelen_val = trainer.datamodule.val_ds.core_lengths
+        corelen_test = trainer.datamodule.test_ds.core_lengths
 
         # all preds in order
         all_val_logits = torch.cat(pl_module.all_val_online_logits)
