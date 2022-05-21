@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "vicreg_UVA600_whole-region"
+name: "vicreg_UVA600_needle-region"
 
 seed: 12345
 
