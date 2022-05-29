@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from pl_bolts.models.self_supervised.ssl_finetuner import SSLFineTuner
 from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torchmetrics import Accuracy, MaxMetric, MetricCollection, StatScores, ConfusionMatrix, AUROC
+from torchmetrics.functional import stat_scores, confusion_matrix
 
 
 class ExactFineTuner(SSLFineTuner):
@@ -44,12 +45,15 @@ class ExactFineTuner(SSLFineTuner):
             'finetune_acc': Accuracy(num_classes=self.num_classes, multiclass=True),
             'finetune_acc_macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
             'finetune_auc': AUROC(num_classes=self.num_classes),
-            'finetune_stats': StatScores(num_classes=self.num_classes)
         })
         self.train_acc = Accuracy()
+
         self.val_metrics = metrics.clone(prefix='val/')
-        self.test_metrics = metrics.clone(prefix='test/')
+        self.val_cf = ConfusionMatrix(num_classes=self.num_classes)
         self.val_acc_best = MaxMetric()
+
+        self.test_metrics = metrics.clone(prefix='test/')
+        self.test_cf = ConfusionMatrix(num_classes=self.num_classes)
 
     def shared_step(self, batch):
         x, y = batch
@@ -79,41 +83,41 @@ class ExactFineTuner(SSLFineTuner):
         kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True}
 
         if dataloader_idx == 0:
-            self.val_metrics(logits.softmax(-1), y)
             self.all_val_online_logits.append(logits)
-            tp, fp, tn, fn, sup = self.val_metrics['val/finetune_stats'].compute()
+            self.val_metrics(logits.softmax(-1), y)
+            self.val_cf(logits.softmax(-1), y)
 
             self.log_dict(self.val_metrics, prog_bar=True, **kwargs)
-            self.log("val/finetune_loss", loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log("val/finetune_sen", tp/(tp+fn), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log("val/finetune_spe", tn/(tn+fp), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-        elif dataloader_idx == 1:
-            self.test_metrics(logits.softmax(-1), y)
-            self.all_test_online_logits.append(logits)
-            tp, fp, tn, fn, sup = self.test_metrics['test/finetune_stats'].compute()
+            self.log("val/finetune_loss", loss, prog_bar=True, **kwargs)
 
-            self.log_dict(self.test_metrics, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log("test/finetune_loss", loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log("test/finetune_sen", tp/(tp+fn), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log("test/finetune_spe", tn/(tn+fp), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        elif dataloader_idx == 1:
+            self.all_test_online_logits.append(logits)
+            self.test_metrics(logits.softmax(-1), y)
+            self.test_cf(logits.softmax(-1), y)
+
+            self.log_dict(self.test_metrics, prog_bar=True, **kwargs)
+            self.log("test/finetune_loss", loss, prog_bar=True, **kwargs)
+
 
         return loss
 
     def validation_epoch_end(self, outs):
-        all_val_preds = torch.cat(self.all_val_online_logits).argmax(dim=1).detach().cpu().numpy()
-        val_targets = self.trainer.datamodule.val_ds.labels[:len(all_val_preds)]
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True}
 
-        val_acc = (all_val_preds == val_targets).sum() / len(val_targets)
+        cf = self.val_cf.compute()
+        tp, fp, tn, fn = cf[1, 1], cf[0, 1], cf[0, 0], cf[1, 0]
+        self.log("val/finetune_sen", tp / (tp + fn), **kwargs)
+        self.log("val/finetune_spe", tn / (tn + fp), **kwargs)
+        print("val cf", cf)
+
+        cf = self.test_cf.compute()
+        tp, fp, tn, fn = cf[1, 1], cf[0, 1], cf[0, 0], cf[1, 0]
+        self.log("test/finetune_sen", tp / (tp + fn), **kwargs)
+        self.log("test/finetune_spe", tn / (tn + fp), **kwargs)
+
+        val_acc = self.val_metrics['finetune_acc'].compute()
         self.val_acc_best.update(val_acc)
-
-        self.log("val/finetune_acc_best", self.val_acc_best.compute(), on_step=False, on_epoch=True,
-                 prog_bar=True, sync_dist=True)
-
-        part1 = (all_val_preds[val_targets==0] == val_targets[val_targets==0]).sum()/len(val_targets[val_targets==0])
-        part2 = (all_val_preds[val_targets==1] == val_targets[val_targets==1]).sum()/len(val_targets[val_targets==1])
-        val_acc_test = (part1+part2)*.5
-        self.log("val/finetune_acc_macro-manu", val_acc_test, on_step=False, on_epoch=True,
-                 prog_bar=True, sync_dist=True)
+        self.log("val/finetune_acc_best", self.val_acc_best.compute(), prog_bar=True, **kwargs)
 
     def test_step(self, batch, batch_idx):
         pass
@@ -122,9 +126,12 @@ class ExactFineTuner(SSLFineTuner):
         # reset all saved logits
         self.all_val_online_logits = []
         self.all_test_online_logits = []
+
         self.train_acc.reset()
         self.val_metrics.reset()
         self.test_metrics.reset()
+        self.val_cf.reset()
+        self.test_cf.reset()
 
         # reset metrics after sanity checks'
         if self.trainer.sanity_checking:
