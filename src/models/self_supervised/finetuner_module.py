@@ -3,7 +3,6 @@ import torch.nn.functional as F
 from pl_bolts.models.self_supervised.ssl_finetuner import SSLFineTuner
 from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torchmetrics import Accuracy, MaxMetric, MetricCollection, StatScores, ConfusionMatrix, AUROC
-from torchmetrics.functional import stat_scores, confusion_matrix
 
 
 class ExactFineTuner(SSLFineTuner):
@@ -42,8 +41,8 @@ class ExactFineTuner(SSLFineTuner):
 
         # metrics for logging
         metrics = MetricCollection({
-            'finetune_acc': Accuracy(num_classes=self.num_classes, multiclass=True),
-            'finetune_acc_macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
+            # 'finetune_acc': Accuracy(num_classes=self.num_classes, multiclass=True),
+            'finetune_acc-macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
             'finetune_auc': AUROC(num_classes=self.num_classes),
         })
         self.train_acc = Accuracy()
@@ -98,7 +97,6 @@ class ExactFineTuner(SSLFineTuner):
             self.log_dict(self.test_metrics, prog_bar=True, **kwargs)
             self.log("test/finetune_loss", loss, prog_bar=True, **kwargs)
 
-
         return loss
 
     def validation_epoch_end(self, outs):
@@ -108,7 +106,6 @@ class ExactFineTuner(SSLFineTuner):
         tp, fp, tn, fn = cf[1, 1], cf[0, 1], cf[0, 0], cf[1, 0]
         self.log("val/finetune_sen", tp / (tp + fn), **kwargs)
         self.log("val/finetune_spe", tn / (tn + fp), **kwargs)
-        print("val cf", cf)
 
         cf = self.test_cf.compute()
         tp, fp, tn, fn = cf[1, 1], cf[0, 1], cf[0, 0], cf[1, 0]
