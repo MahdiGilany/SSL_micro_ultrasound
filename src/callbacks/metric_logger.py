@@ -59,19 +59,6 @@ class MetricLogger(Callback):
         dataloader_idx: int,
     ) -> None:
         pass
-        # _, y = batch
-        # y = y.detach().cpu()
-        #
-        # if dataloader_idx == 0:
-        #
-        #
-        # elif dataloader_idx == 1:
-        #     logits = pl_module.all_test_online_logits[-1]
-        #     logits = logits.detach().cpu()
-        #     self.test_metrics(logits.softmax(-1), y)
-        #     self.test_cf(logits.softmax(-1), y)
-        #     pl_module.log_dict(self.test_metrics.compute(), prog_bar=True, **self.kwargs)
-
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         ### validation logs ###

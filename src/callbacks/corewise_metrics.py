@@ -15,7 +15,10 @@ class CorewiseMetrics(Callback):
         - pl_model has to have all_test_online_logits which contains all logits of the epoch
 
     """
-    def __init__(self, inv_threshold: float = 0.5):
+    def __init__(
+            self,
+            inv_threshold: float = 0.5
+    ):
         super().__init__()
         # threshold to consider a predicted involvement as cancer
         self.inv_threshold = inv_threshold

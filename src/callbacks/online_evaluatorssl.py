@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -35,9 +34,6 @@ class ExactOnlineEval(SSLOnlineEvaluator):
 
         self.num_classes = kwargs['num_classes']
         self.setup_flag = True
-
-        # # for logging best so far validation accuracy
-        # self.val_online_acc_best = MaxMetric()
 
         # # metrics for logging
         metrics = MetricCollection({
@@ -125,16 +121,6 @@ class ExactOnlineEval(SSLOnlineEvaluator):
 
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-
-        # all_val_online_preds = torch.cat(pl_module.all_val_online_logits).argmax(dim=1).detach().cpu().numpy()
-        # # all_test_online_preds = torch.cat(self.all_test_online_logits.argmax(dim=1), dim=0).detach().cpu().numpy()
-        #
-        # # logging the best val online_acc
-        # val_targets = trainer.datamodule.val_ds.labels[:len(all_val_online_preds)]
-        # val_acc = (all_val_online_preds == val_targets).sum() / len(val_targets)
-        # self.val_online_acc_best.update(val_acc)
-        # pl_module.log("val/ssl/online_acc_best", self.val_online_acc_best.compute(), on_step=False, on_epoch=True,
-        #          prog_bar=True, sync_dist=True)
         pass
 
     def on_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
@@ -142,11 +128,6 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         pl_module.train_acc.reset()
         pl_module.val_metrics.reset()
         pl_module.test_metrics.reset()
-
-        # # reset metrics after sanity checks'
-        # if trainer.sanity_checking:
-        #     self.val_online_acc_best.reset()
-
 
 
 @contextmanager
