@@ -11,6 +11,8 @@ class CorewiseMetrics(Callback):
     Requirements:
         - data module has to have val or test_ds.core_lengths
         - data module has to have val or test_ds.core_labels
+        - pl_model has to have all_val_online_logits which contains all logits of the epoch
+        - pl_model has to have all_test_online_logits which contains all logits of the epoch
 
     """
     def __init__(self, inv_threshold: float = 0.5):
@@ -27,7 +29,7 @@ class CorewiseMetrics(Callback):
         corelen_val = trainer.datamodule.val_ds.core_lengths
         corelen_test = trainer.datamodule.test_ds.core_lengths
 
-        # all preds in order
+        # all val and test preds in order
         all_val_logits = torch.cat(pl_module.all_val_online_logits)
         all_test_logits = torch.cat(pl_module.all_test_online_logits)
         all_val_preds = all_val_logits.argmax(dim=1).detach().cpu().numpy()
@@ -37,31 +39,31 @@ class CorewiseMetrics(Callback):
         all_val_coretargets = trainer.datamodule.val_ds.core_labels
         all_test_coretargets = trainer.datamodule.test_ds.core_labels
 
-        all_val_corepreds = []
-        all_test_corepreds = []
+        # find a label for each core in val and test
+        all_val_corepreds = self.get_core_preds(all_val_preds, corelen_val)
+        all_test_corepreds = self.get_core_preds(all_test_preds, corelen_test)
 
-        # find a label for each core in val
-        corelen_cumsum = np.cumsum([0] + corelen_val)
-        for i, val in enumerate(corelen_cumsum):
-            if i == 0 or val>len(all_val_preds):
-                continue
-            val_minus1 = corelen_cumsum[i-1]
-            core_preds = all_val_preds[val_minus1:val]
-            all_val_corepreds.append(core_preds.sum()/len(core_preds))
 
-        # find a label for each core in test
-        corelen_cumsum = np.cumsum([0] + corelen_test)
-        for i, val in enumerate(corelen_cumsum):
-            if i == 0 or val>len(all_test_preds):
-                continue
-            val_minus1 = corelen_cumsum[i-1]
-            core_preds = all_test_preds[val_minus1:val]
-            all_test_corepreds.append(core_preds.sum()/len(core_preds))
-
+        # scores is a dict containing all core-wise metrics
         scores = self.compute_metrics(np.array(all_val_corepreds), all_val_coretargets, state='val', scores={})
         scores = self.compute_metrics(np.array(all_test_corepreds), all_test_coretargets, state='test', scores=scores)
 
         self.log_scores(scores, pl_module)
+
+    def get_core_preds(self, all_val_preds, corelen_val):
+        """This function takes the mean of all patches inside a core as prediction of that core."""
+        all_val_corepreds = []
+        corelen_cumsum = np.cumsum([0] + corelen_val)
+
+        for i, val in enumerate(corelen_cumsum):
+            if i == 0 or val > len(all_val_preds):
+                continue
+
+            val_minus1 = corelen_cumsum[i-1]
+            core_preds = all_val_preds[val_minus1:val]
+            all_val_corepreds.append(core_preds.sum()/len(core_preds))
+
+        return all_val_corepreds
 
     def compute_metrics(self, preds, targets, state, scores={}):
         ind = np.minimum(len(preds), len(targets), dtype='int')

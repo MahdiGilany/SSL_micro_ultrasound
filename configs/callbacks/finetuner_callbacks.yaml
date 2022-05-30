@@ -1,6 +1,6 @@
 #model_checkpoint:
 #  _target_: pytorch_lightning.callbacks.ModelCheckpoint
-#  monitor: "val/finetune_acc/dataloader_idx_0" # name of the logged metric which determines when model is improving #todo what if not online evaluator
+#  monitor: "val/finetune_acc" # name of the logged metric which determines when model is improving #todo what if not online evaluator
 #  mode: "max" # "max" means higher metric value is better, can be also "min"
 #  save_top_k: 1 # save k best models (determined by above metric)
 #  save_last: False # additionaly always save model from last epoch
@@ -11,7 +11,7 @@
 
 early_stopping:
   _target_: pytorch_lightning.callbacks.EarlyStopping
-  monitor: "val/finetune_acc/dataloader_idx_0" # name of the logged metric which determines when model is improving
+  monitor: "val/finetune_acc-macro" # name of the logged metric which determines when model is improving
   mode: "max" # "max" means higher metric value is better, can be also "min"
   patience: 100 # how many validation epochs of not improving until training stops
   min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
@@ -34,4 +34,9 @@ learning_rate_monitor:
 corewise_metrics:
   _target_: src.callbacks.corewise_metrics.CorewiseMetrics
   inv_threshold: 0.5
+
+metric_logger:
+  _target_: src.callbacks.metric_logger.MetricLogger
+  mode: "finetune"
+  num_classes: 2
 

@@ -16,10 +16,10 @@ train_val_ratio: 0.25
 needle_region_intersection_threshold: 0.6
 
 use_augmentations: False
-aug_prob: 0.5 # probability of augmentations
+aug_prob: 0.4 # probability of augmentations
 
 random_erasing: True
-random_invert: True
+random_invert: False
 random_horizontal_flip: True
 random_vertical_flip: True
 random_affine_translation: [0.2, 0.2]

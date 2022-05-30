@@ -7,18 +7,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pl_bolts.callbacks.ssl_online import SSLOnlineEvaluator
 from pytorch_lightning import Callback, LightningModule, Trainer
-from torchmetrics import MaxMetric
+from torchmetrics import Accuracy, MaxMetric, MetricCollection, StatScores, ConfusionMatrix, AUROC
 from torchmetrics.functional import accuracy
 
 
 class ExactOnlineEval(SSLOnlineEvaluator):
     """This class is mostly copy of its parent class with some small changes.
-        the model that uses this callback should fill pl_module.all_val_online_logits
-        and pl_module.all_test_online_logits at each step.
+        the model that uses this callback requires:
 
         Requirements:
+            - pl_module.all_val_online_logits which is list of all val logits for the whole epoch
+            - pl_module.all_test_online_logits
             - datamodule should have val_ds
-            - val_ds should have list of all labels in val_ds.label
+            - val_ds should have list of all labels in val_ds.labels
 
 
     """
@@ -32,8 +33,30 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         """
         super().__init__(*args, **kwargs)
 
-        # for logging best so far validation accuracy
-        self.val_online_acc_best = MaxMetric()
+        self.num_classes = kwargs['num_classes']
+        self.setup_flag = True
+
+        # # for logging best so far validation accuracy
+        # self.val_online_acc_best = MaxMetric()
+
+        # # metrics for logging
+        metrics = MetricCollection({
+            'online_acc-macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
+            # 'finetune_auc': AUROC(num_classes=self.num_classes),
+        })
+        self.train_acc = Accuracy()
+        self.val_metrics = metrics.clone(prefix='val/ssl/')
+        self.test_metrics = metrics.clone(prefix='test/ssl/')
+
+    def setup(self, trainer: Trainer, pl_module: LightningModule, stage: Optional[str] = None) -> None:
+        super(ExactOnlineEval, self).setup(trainer=trainer, pl_module=pl_module, stage=stage)
+
+        if self.setup_flag:
+            pl_module.train_acc = self.train_acc.to(pl_module.device)
+            pl_module.val_metrics = self.val_metrics.to(pl_module.device)
+            pl_module.test_metrics = self.test_metrics.to(pl_module.device)
+            self.setup_flag = False
+
 
     def shared_step(
         self,
@@ -49,9 +72,9 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         mlp_logits = self.online_evaluator(representations)  # type: ignore[operator]
         mlp_loss = F.cross_entropy(mlp_logits, y)
 
-        acc = accuracy(mlp_logits.softmax(-1), y)
+        # acc = accuracy(mlp_logits.softmax(-1), y)
 
-        return acc, mlp_loss, mlp_logits
+        return mlp_loss, mlp_logits, y
 
     def on_train_batch_end(
         self,
@@ -62,14 +85,16 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
-        train_acc, mlp_loss, _ = self.shared_step(pl_module, batch)
+        mlp_loss, mlp_logits, y = self.shared_step(pl_module, batch)
 
         # update finetune weights
         mlp_loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
 
-        pl_module.log("train/ssl/online_acc", train_acc, on_step=False, on_epoch=True, sync_dist=True)
+        pl_module.train_acc(mlp_logits.softmax(-1), y)
+
+        pl_module.log("train/ssl/online_acc", pl_module.train_acc, on_step=False, on_epoch=True, sync_dist=True)
         pl_module.log("train/ssl/online_loss", mlp_loss, on_step=False, on_epoch=True, sync_dist=True)
 
     def on_validation_batch_end(
@@ -81,35 +106,46 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
-        val_acc, mlp_loss, mlp_logits = self.shared_step(pl_module, batch)
+        mlp_loss, mlp_logits, y = self.shared_step(pl_module, batch)
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
 
         if dataloader_idx == 0:
+            pl_module.val_metrics(mlp_logits.softmax(-1), y)
             pl_module.all_val_online_logits.append(mlp_logits)
-            pl_module.log("val/ssl/online_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
-            pl_module.log("val/ssl/online_loss", mlp_loss, on_step=False, on_epoch=True, sync_dist=True)
+
+            pl_module.log_dict(pl_module.val_metrics, **kwargs)
+            pl_module.log("val/ssl/online_loss", mlp_loss, **kwargs)
+            # pl_module.log("val/ssl/online_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
         elif dataloader_idx == 1:
+            pl_module.test_metrics(mlp_logits.softmax(-1), y)
             pl_module.all_test_online_logits.append(mlp_logits)
-            pl_module.log("test/ssl/online_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
-            pl_module.log("test/ssl/online_loss", mlp_loss, on_step=False, on_epoch=True, sync_dist=True)
+
+            pl_module.log_dict(pl_module.test_metrics, **kwargs)
+            pl_module.log("test/ssl/online_loss", mlp_loss, **kwargs)
 
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
 
-        # saving all preds for corewise callback: val and test
-        all_val_online_preds = torch.cat(pl_module.all_val_online_logits).argmax(dim=1).detach().cpu().numpy()
-        # all_test_online_preds = torch.cat(self.all_test_online_logits.argmax(dim=1), dim=0).detach().cpu().numpy()
-
-        # logging the best val online_acc
-        val_targets = trainer.datamodule.val_ds.labels[:len(all_val_online_preds)]
-        val_acc = (all_val_online_preds == val_targets).sum() / len(val_targets)
-        self.val_online_acc_best.update(val_acc)
-        pl_module.log("val/ssl/online_acc_best", self.val_online_acc_best.compute(), on_step=False, on_epoch=True,
-                 prog_bar=True, sync_dist=True)
+        # all_val_online_preds = torch.cat(pl_module.all_val_online_logits).argmax(dim=1).detach().cpu().numpy()
+        # # all_test_online_preds = torch.cat(self.all_test_online_logits.argmax(dim=1), dim=0).detach().cpu().numpy()
+        #
+        # # logging the best val online_acc
+        # val_targets = trainer.datamodule.val_ds.labels[:len(all_val_online_preds)]
+        # val_acc = (all_val_online_preds == val_targets).sum() / len(val_targets)
+        # self.val_online_acc_best.update(val_acc)
+        # pl_module.log("val/ssl/online_acc_best", self.val_online_acc_best.compute(), on_step=False, on_epoch=True,
+        #          prog_bar=True, sync_dist=True)
+        pass
 
     def on_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        # reset metrics after sanity checks'
-        if trainer.sanity_checking:
-            self.val_online_acc_best.reset()
+        # reset metrics
+        pl_module.train_acc.reset()
+        pl_module.val_metrics.reset()
+        pl_module.test_metrics.reset()
+
+        # # reset metrics after sanity checks'
+        # if trainer.sanity_checking:
+        #     self.val_online_acc_best.reset()
 
 
 

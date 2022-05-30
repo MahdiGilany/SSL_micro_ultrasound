@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "fintun_epLast_ndlRgnPretrnUVA600_oldDM"
+name: "fintun_whlRgn_PretrnUVA600_oldDM"
 
 seed: 12345
 
@@ -39,7 +39,7 @@ datamodule:
 model:
   backbone:
     backbone: resnet10
-  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_online-eval_augpr.4-intes/2022-04-27_16-27-15/checkpoints/epoch_020.ckpt
+  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whl-rgn_strd3/2022-05-23_21-47-56/checkpoints/epoch_180.ckpt
   hidden_dim: null
   dropout: 0.0
   semi_sup: False

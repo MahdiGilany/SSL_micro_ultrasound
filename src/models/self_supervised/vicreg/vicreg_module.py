@@ -133,15 +133,16 @@ class VICReg(ExactSSLModule):
             cov_loss_weight=self.cov_loss_weight,
         )
 
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
         if dataloader_idx == 0:
-            self.log("val/ssl/vicreg_loss", vicreg_loss, on_step=False, on_epoch=True, sync_dist=True)
-            self.log("val/ssl/sim_loss", all_loss[0], on_step=False, on_epoch=True, sync_dist=True)
-            self.log("val/ssl/var_loss", all_loss[1], on_step=False, on_epoch=True, sync_dist=True)
-            self.log("val/ssl/cov_loss", all_loss[2], on_step=False, on_epoch=True, sync_dist=True)
+            self.log("val/ssl/vicreg_loss", vicreg_loss, **kwargs)
+            self.log("val/ssl/sim_loss", all_loss[0], **kwargs)
+            self.log("val/ssl/var_loss", all_loss[1], **kwargs)
+            self.log("val/ssl/cov_loss", all_loss[2], **kwargs)
         elif dataloader_idx == 1:
-            self.log("test/ssl/vicreg_loss", vicreg_loss, on_step=False, on_epoch=True, sync_dist=True)
-            self.log("test/ssl/sim_loss", all_loss[0], on_step=False, on_epoch=True, sync_dist=True)
-            self.log("test/ssl/var_loss", all_loss[1], on_step=False, on_epoch=True, sync_dist=True)
-            self.log("test/ssl/cov_loss", all_loss[2], on_step=False, on_epoch=True, sync_dist=True)
+            self.log("test/ssl/vicreg_loss", vicreg_loss, **kwargs)
+            self.log("test/ssl/sim_loss", all_loss[0], **kwargs)
+            self.log("test/ssl/var_loss", all_loss[1], **kwargs)
+            self.log("test/ssl/cov_loss", all_loss[2], **kwargs)
 
         return vicreg_loss
