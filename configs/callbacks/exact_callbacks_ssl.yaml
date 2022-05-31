@@ -35,11 +35,12 @@ online_evaluatorssl: # ssl online evaluator
   drop_p: 0.0
   hidden_dim: null
 
-corewise_metrics:
-  _target_: src.callbacks.corewise_metrics.CorewiseMetrics
-  inv_threshold: 0.5
+#corewise_metrics:
+#  _target_: src.callbacks.corewise_metrics.CorewiseMetrics
+#  inv_threshold: 0.5
 
 metric_logger:
   _target_: src.callbacks.metric_logger.MetricLogger
   mode: "online"
   num_classes: 2
+  corewise_inv_threshold: 0.5
