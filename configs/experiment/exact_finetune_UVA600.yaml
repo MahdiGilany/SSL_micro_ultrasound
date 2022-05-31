@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "fintun_whlRgn_PretrnUVA600_debug"
+name: "fintun_whlRgn_preTrnUVA600"
 
 seed: 12345
 

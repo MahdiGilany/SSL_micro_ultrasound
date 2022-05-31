@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional, Sequence, Tuple, Union, Literal
 
 import numpy as np
+import wandb
+
 import torch
 from pytorch_lightning import Callback, LightningModule, Trainer
 from torchmetrics import Accuracy, MaxMetric, MetricCollection, StatScores, ConfusionMatrix, AUROC, CatMetric
@@ -77,7 +79,8 @@ class MetricLogger(Callback):
         scores = self.compute_core_maxmetrics(prefix=self.test_prefix, scores=scores)
 
         ### loging all ###
-        self.log_scores(scores, pl_module)
+        self.log_scores(pl_module, scores)
+        self.log_core_scatter(trainer, val_core_probs, test_core_probs)
 
     def compute_patch_metrics(self, logits, labels, prefix, scores={}):
         scores[f'{prefix}{self.mode}_auc'] = auroc(logits.softmax(-1), labels, num_classes=self.num_classes)
@@ -185,9 +188,25 @@ class MetricLogger(Callback):
 
         return scores
 
-    def log_scores(self, scores, pl_module):
+    def log_scores(self, pl_module, scores):
         for key in scores.keys():
             pl_module.log(key, scores[key], on_epoch=True)
+
+    def log_core_scatter(
+            self,
+            trainer,
+            val_core_probs,
+            test_core_probs,
+    ):
+        val_core_inv = trainer.datamodule.val_ds.core_inv
+        data = [[x, y] for (x, y) in zip(val_core_inv, val_core_probs)]
+        table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
+        wandb.log({f"{self.val_prefix}{self.mode}_core_scatter": wandb.plot.scatter(table, "True_inv", "Pred_inv")})
+
+        test_core_inv = trainer.datamodule.test_ds.core_inv
+        data = [[x, y] for (x, y) in zip(test_core_inv, test_core_probs)]
+        table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
+        wandb.log({f"{self.test_prefix}{self.mode}_core_scatter": wandb.plot.scatter(table, "True_inv", "Pred_inv")})
 
     def on_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         # reset metrics after sanity checks'

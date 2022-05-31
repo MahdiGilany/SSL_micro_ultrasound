@@ -48,9 +48,12 @@ class ExactDataset(Dataset, HyperparametersMixin):
         self.ind_RFimg = [self.patchind_to_RFimgind(i) for i, n in enumerate(self.used_patch_names)]
 
         # labels
-        self.core_labels = extended_metadata.meta_data[f'label_{self.hparams.state}']
+        self.core_labels = list(extended_metadata.meta_data[f'label_{self.hparams.state}'])
         self.labels = [self.core_labels[ind] for i, ind in enumerate(self.ind_RFimg)]
         # self.labels = to_categorical(self.label)
+
+        # invs
+        self.core_inv = list(extended_metadata.meta_data[f'inv_{self.hparams.state}'])
 
         # augmentation
         self.transforms = aug_transforms(state, dataset_hyp.aug_list, p=dataset_hyp.aug_prob)\
