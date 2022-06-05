@@ -69,7 +69,8 @@ class ExactFineTuner(SSLFineTuner):
         self.train_acc(logits.softmax(-1), y)
 
         self.log("train/finetune_loss", loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-        self.log("train/finetune_acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log("train/finetune_acc", self.train_acc.compute(), on_step=False, on_epoch=True, prog_bar=True,
+                 sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_idx, dataloader_idx: int):

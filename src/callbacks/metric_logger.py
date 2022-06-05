@@ -157,7 +157,7 @@ class MetricLogger(Callback):
         corelen_cumsum = torch.cumsum(torch.tensor([0] + corelen_val), dim=0)
 
         for i, val in enumerate(corelen_cumsum):
-            if i == 0 or val > len(all_val_preds):
+            if i == 0: # or val > len(all_val_preds):
                 continue
 
             val_minus1 = corelen_cumsum[i - 1]

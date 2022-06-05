@@ -90,8 +90,9 @@ class ExactOnlineEval(SSLOnlineEvaluator):
 
         pl_module.train_acc(mlp_logits.softmax(-1), y)
 
-        pl_module.log("train/ssl/online_acc", pl_module.train_acc, on_step=False, on_epoch=True, sync_dist=True)
         pl_module.log("train/ssl/online_loss", mlp_loss, on_step=False, on_epoch=True, sync_dist=True)
+        pl_module.log("train/ssl/online_acc", pl_module.train_acc.computed(), on_step=False, on_epoch=True,
+                      sync_dist=True)
 
     def on_validation_batch_end(
         self,
@@ -106,15 +107,15 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
 
         if dataloader_idx == 0:
-            pl_module.val_metrics(mlp_logits.softmax(-1), y)
             pl_module.all_val_online_logits.append(mlp_logits)
+            pl_module.val_metrics(mlp_logits.softmax(-1), y)
 
             pl_module.log_dict(pl_module.val_metrics, **kwargs)
             pl_module.log("val/ssl/online_loss", mlp_loss, **kwargs)
             # pl_module.log("val/ssl/online_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
         elif dataloader_idx == 1:
-            pl_module.test_metrics(mlp_logits.softmax(-1), y)
             pl_module.all_test_online_logits.append(mlp_logits)
+            pl_module.test_metrics(mlp_logits.softmax(-1), y)
 
             pl_module.log_dict(pl_module.test_metrics, **kwargs)
             pl_module.log("test/ssl/online_loss", mlp_loss, **kwargs)

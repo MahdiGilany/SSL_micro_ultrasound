@@ -39,7 +39,8 @@ datamodule:
 model:
   backbone:
     backbone: resnet10
-  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whl-rgn_strd3/2022-05-23_21-47-56/checkpoints/epoch_180.ckpt
+#  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whl-rgn_strd3/2022-05-23_21-47-56/checkpoints/epoch_180.ckpt
+  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whl-rgn_strd3/2022-05-31_20-55-02/checkpoints/last.ckpt
   hidden_dim: null
   dropout: 0.0
   semi_sup: False

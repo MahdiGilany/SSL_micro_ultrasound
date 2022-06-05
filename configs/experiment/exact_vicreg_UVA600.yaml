@@ -14,13 +14,13 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "vicreg_UVA600_ndl-rgn_debug"
+name: "vicreg_UVA600_whlRgn_strd3"
 
 seed: 12345
 
 trainer:
-  min_epochs: 100
-  max_epochs: 100
+  min_epochs: 200
+  max_epochs: 200
   gradient_clip_val: null
   limit_train_batches: null
   limit_val_batches: null
@@ -29,12 +29,12 @@ datamodule:
   batch_size: 32
   num_workers: 4
   mode: "self-supervised"
-  needle_region_only: True
+  needle_region_only: False
   inv_cutoff: 0.4
   train_val_ratio: 0.25 # ratio of train to val dataset length
   resample_train_val_seed: 26 # random state for above random split
   patch_size_mm: [5, 5]
-  patch_stride_mm: [1, 1]
+  patch_stride_mm: [3, 3]
   needle_region_intersection_threshold: 0.6
 
   use_augmentations: False
@@ -57,10 +57,11 @@ logger:
     tags: ["exact", "vicreg"]
 
 # comment all these when using needle region only
-#model_checkpoint:
-#  monitor: "val/ssl/vicreg_loss"
-#  mode: "min"
-#
-#early_stopping:
-#  monitor: "val/ssl/vicreg_loss"
-#  mode: "min"
+callbacks:
+  model_checkpoint:
+    monitor: "val/ssl/sim_loss"
+    mode: "min"
+
+  early_stopping:
+    monitor: "val/ssl/sim_loss"
+    mode: "min"
