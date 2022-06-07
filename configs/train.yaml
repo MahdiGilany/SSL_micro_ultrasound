@@ -34,7 +34,8 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-data_dir: ${original_work_dir}/data/
+#data_dir: ${original_work_dir}/data/
+data_dir: C:\Users\Mahdi\Desktop\Shared_folder\projects_data\
 
 # pretty print config at the start of the run using Rich library
 print_config: True

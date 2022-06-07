@@ -42,7 +42,7 @@ class ExactFineTuner(SSLFineTuner):
         # # metrics for logging
         metrics = MetricCollection({
             # 'finetune_acc': Accuracy(num_classes=self.num_classes, multiclass=True),
-            'finetune_acc-macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
+            'finetune_acc_macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
             # 'finetune_auc': AUROC(num_classes=self.num_classes),
         })
         self.train_acc = Accuracy()

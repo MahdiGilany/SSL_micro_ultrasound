@@ -83,6 +83,9 @@ class ExactDataModule(LightningDataModule):
         self.meta_data = merge_split_train_val(self.meta_data, random_state=self.hparams.split_randomstate,
                                                 train_val_split=self.hparams.train_val_split)
 
+        # just to maintain the patients in the same group and use different inv cut-off
+        self.meta_data = remove_empty_lowinv_data_after(self.meta_data,  dataset_hyp=self.hparams.dataset_hyp)
+
         # finding patch centers on needle region (patches for supervised learning)
         self.patch_centers_sl = estimate_patchcenter(self.meta_data, dataset_hyp=self.hparams.dataset_hyp)
 

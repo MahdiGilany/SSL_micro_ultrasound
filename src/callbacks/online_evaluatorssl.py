@@ -37,7 +37,7 @@ class ExactOnlineEval(SSLOnlineEvaluator):
 
         # # metrics for logging
         metrics = MetricCollection({
-            'online_acc-macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
+            'online_acc_macro': Accuracy(num_classes=self.num_classes, average='macro', multiclass=True),
             # 'finetune_auc': AUROC(num_classes=self.num_classes),
         })
         self.train_acc = Accuracy()

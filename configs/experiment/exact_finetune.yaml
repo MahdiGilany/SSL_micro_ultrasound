@@ -34,7 +34,9 @@ datamodule:
     SSL: False
     patch_sz: 5 # patch size in mm
     jump_sz: 1 # jump of each patch to create next patch
-    inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val
+    inv_cutoff_train: 0.4 # cutoff involvement to exclude low inv data in train/test/val
+    inv_cutoff_test: 0.4 # cutoff involvement to exclude low inv data in train/test/val
+    inv_cutoff_val: 0.4 # cutoff involvement to exclude low inv data in train/test/val
 
 model:
   backbone:
@@ -48,5 +50,5 @@ model:
 
 logger:
   wandb:
-    name: ${name}
+    name: ${name}_sd${seed}_srs${datamodule.split_randomstate}
     tags: ["exact", "finetune"]

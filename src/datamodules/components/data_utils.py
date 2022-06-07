@@ -102,7 +102,7 @@ def remove_empty_lowinv_data(meta_data, dataset_hyp=None):
     :return:
     """
 
-    inv_cutoff = dataset_hyp.inv_cutoff
+    inv_cutoff = 0.4
 
     for set_name in ['val', 'test', 'train']:
         data = meta_data[f"data_{set_name}"]
@@ -120,6 +120,29 @@ def remove_empty_lowinv_data(meta_data, dataset_hyp=None):
                     meta_data[k] = meta_data[k][include_idx]
     return meta_data
 
+def remove_empty_lowinv_data_after(meta_data, dataset_hyp=None):
+    """
+    :param meta_data:
+    :return:
+    """
+
+
+    for set_name in ['val', 'test', 'train']:
+        data = meta_data[f"data_{set_name}"]
+        inv = meta_data[f"inv_{set_name}"]
+        inv_cutoff = dataset_hyp[f"inv_cutoff_{set_name}"]
+
+        # indexes to include: not empty data and with inv bigger that cutoff
+        include_idx = [i for i, d in enumerate(data)
+                       if (isinstance(d, np.ndarray) and (inv[i] >= inv_cutoff or inv[i] == 0.))]
+
+        for k in meta_data.keys():
+            if set_name in k:
+                if isinstance(meta_data[k], list):
+                    meta_data[k] = [_ for i, _ in enumerate(meta_data[k]) if i in include_idx]
+                else:
+                    meta_data[k] = meta_data[k][include_idx]
+    return meta_data
 
 def estimate_patchcenter(meta_data, dataset_hyp=None):
     """finds patch centers considering that only 1mmx1mm patches are accessible.

@@ -5,4 +5,4 @@ hydra:
     dir: logs/experiments/runs/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
   sweep:
     dir: logs/experiments/multiruns/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
-    subdir: ${hydra.job.num}
+    subdir: .

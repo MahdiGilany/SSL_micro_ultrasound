@@ -17,8 +17,8 @@ class MetricLogger(Callback):
         Requirements:
             - considers that pl_module.all_val_online_logits variable is available and contarins all logits
             - considers that pl_module.all_test_online_logits variable is available and contarins all logits
-            - considers that pl_module.val_metrics['finetune(or)online_acc-macro'] variable is available
-            - considers that pl_module.test_metrics['finetune(or)online_acc-macro'] variable is available
+            - considers that pl_module.val_metrics['finetune(or)online_acc_macro'] variable is available
+            - considers that pl_module.test_metrics['finetune(or)online_acc_macro'] variable is available
             - trainer.datamodule.val_ds.labels
             - trainer.datamodule.test_ds.labels
     """
@@ -97,14 +97,14 @@ class MetricLogger(Callback):
         # patchwise
         val_auc = scores[f'{self.val_prefix}{self.mode}_auc']
         test_auc = scores[f'{self.test_prefix}{self.mode}_auc']
-        val_acc = pl_module.val_metrics[f'{self.mode}_acc-macro'].compute().detach().cpu()
-        test_acc = pl_module.test_metrics[f'{self.mode}_acc-macro'].compute().detach().cpu()
+        val_acc = pl_module.val_metrics[f'{self.mode}_acc_macro'].compute().detach().cpu()
+        test_acc = pl_module.test_metrics[f'{self.mode}_acc_macro'].compute().detach().cpu()
 
         # corewise
         val_core_auc = scores[f'{self.val_prefix}{self.mode}_core_auc']
         test_core_auc = scores[f'{self.test_prefix}{self.mode}_core_auc']
-        val_core_acc = scores[f'{self.val_prefix}{self.mode}_core_acc-macro']
-        test_core_acc = scores[f'{self.test_prefix}{self.mode}_core_acc-macro']
+        val_core_acc = scores[f'{self.val_prefix}{self.mode}_core_acc_macro']
+        test_core_acc = scores[f'{self.test_prefix}{self.mode}_core_acc_macro']
 
 
         self.val_auc_all.append(val_auc)
@@ -125,7 +125,7 @@ class MetricLogger(Callback):
         scores[f"{prefix}{self.mode}_auc_best"] = self.val_auc_all[self.best_epoch] if 'val' in prefix else \
             self.test_auc_all[self.best_epoch]
 
-        scores[f"{prefix}{self.mode}_acc-macro_best"] = self.val_acc_all[self.best_epoch] if 'val' in prefix else \
+        scores[f"{prefix}{self.mode}_acc_macro_best"] = self.val_acc_all[self.best_epoch] if 'val' in prefix else \
             self.test_acc_all[self.best_epoch]
 
         return scores
@@ -168,7 +168,7 @@ class MetricLogger(Callback):
 
     def compute_core_metrics(self, probs, labels, prefix, scores={}):
         scores[f'{prefix}{self.mode}_core_auc'] = auroc(probs, labels)
-        scores[f'{prefix}{self.mode}_core_acc-macro'] = accuracy(probs, labels, average='macro',
+        scores[f'{prefix}{self.mode}_core_acc_macro'] = accuracy(probs, labels, average='macro',
                                                                  num_classes=self.num_classes, multiclass=True)
 
         cf = confusion_matrix(probs, labels, num_classes=self.num_classes)
@@ -183,7 +183,7 @@ class MetricLogger(Callback):
         scores[f"{prefix}{self.mode}_core_auc_best"] = self.val_core_auc_all[self.best_epoch] if 'val' in prefix \
             else self.test_core_auc_all[self.best_epoch]
 
-        scores[f"{prefix}{self.mode}_core_acc-macro_best"] = self.val_core_acc_all[self.best_epoch] if 'val' in prefix \
+        scores[f"{prefix}{self.mode}_core_acc_macro_best"] = self.val_core_acc_all[self.best_epoch] if 'val' in prefix \
             else self.test_core_acc_all[self.best_epoch]
 
         return scores
