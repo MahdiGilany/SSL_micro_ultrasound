@@ -7,13 +7,16 @@ batch_size: 32
 num_workers: 4
 mode: "self-supervised"
 needle_region_only: True
-inv_cutoff: 0.4
+prostate_region_only: True
+#inv_cutoff: 0.4
+minimum_involvement: 0.4
 
 
 resample_train_val: True
 resample_train_val_seed: 26
 train_val_ratio: 0.25
 needle_region_intersection_threshold: 0.6
+prostate_region_intersection_threshold: 0.9
 
 use_augmentations: False
 aug_prob: 0.4 # probability of augmentations
@@ -28,12 +31,13 @@ random_affine_shear: [0, 0, 0, 0]
 random_resized_crop: False
 random_resized_crop_scale: [0.7, 1]
 
-out_size: 256
+#out_size: 256
 balance_classes_train: True
-balance_classes_eval: False
+#balance_classes_eval: False
 normalize_mode: instance
 normalize_type: min-max
 normalize_truncate: True
 
 patch_size_mm: [5, 5]
 patch_stride_mm: [1, 1]
+patch_size_pixels: [256, 256]

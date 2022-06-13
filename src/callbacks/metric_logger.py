@@ -21,6 +21,8 @@ class MetricLogger(Callback):
             - considers that pl_module.test_metrics['finetune(or)online_acc_macro'] variable is available
             - trainer.datamodule.val_ds.labels
             - trainer.datamodule.test_ds.labels
+            - trainer.datamodule.val_ds.core_lengths
+            - trainer.datamodule.test_ds.core_lengths
     """
 
     def __init__(
@@ -198,12 +200,12 @@ class MetricLogger(Callback):
             val_core_probs,
             test_core_probs,
     ):
-        val_core_inv = trainer.datamodule.val_ds.core_inv
+        val_core_inv = np.asarray(trainer.datamodule.val_ds.core_inv)/100.0
         data = [[x, y] for (x, y) in zip(val_core_inv, val_core_probs)]
         table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
         wandb.log({f"{self.val_prefix}{self.mode}_core_scatter": wandb.plot.scatter(table, "True_inv", "Pred_inv")})
 
-        test_core_inv = trainer.datamodule.test_ds.core_inv
+        test_core_inv = np.asarray(trainer.datamodule.test_ds.core_inv)/100.0
         data = [[x, y] for (x, y) in zip(test_core_inv, test_core_probs)]
         table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
         wandb.log({f"{self.test_prefix}{self.mode}_core_scatter": wandb.plot.scatter(table, "True_inv", "Pred_inv")})

@@ -30,12 +30,15 @@ datamodule:
   num_workers: 4
   mode: "self-supervised"
   needle_region_only: False
-  inv_cutoff: 0.4
+  prostate_region_only: True
+#  inv_cutoff: 0.4
+  minimum_involvement: 0.4
   train_val_ratio: 0.25 # ratio of train to val dataset length
   resample_train_val_seed: 26 # random state for above random split
   patch_size_mm: [5, 5]
   patch_stride_mm: [3, 3]
   needle_region_intersection_threshold: 0.6
+  prostate_region_intersection_threshold: 0.9
 
   use_augmentations: False
   aug_prob: 0.4 # probability of augmentations
