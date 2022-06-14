@@ -1,5 +1,5 @@
 from torch.utils.data import DataLoader
-from exactvu.data.datamodules import ExactSSLDataModule
+from exactvu.data.datamodule import ExactSSLDataModule
 # from exactvu.data.datamodules import MICCAI2022DataModule
 
 
