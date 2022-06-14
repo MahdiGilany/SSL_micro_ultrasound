@@ -57,7 +57,7 @@ model:
 logger:
   wandb:
     name: ${name} #_srs${datamodule.resample_train_val_seed}_split${datamodule.train_val_ratio}
-    tags: ["exact", "vicreg"]
+    tags: ["exact", "vicreg", "first_inPrst"]
 
 # comment all these when using needle region only
 callbacks:

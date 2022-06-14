@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "fintun_whlRgn_preTrnUVA600_testingNewDM_prsRgn"
+name: "fintun_whlRgn_preTrnUVA600_prstRgn"
 
 seed: 12345
 
@@ -30,7 +30,7 @@ datamodule:
   num_workers: 4
   mode: "supervised"
   needle_region_only: True
-  prostate_region_only: False
+  prostate_region_only: True
   #  inv_cutoff: 0.4
   minimum_involvement: 0.4
   train_val_ratio: 0.25 # ratio of train to val dataset length
@@ -46,7 +46,8 @@ datamodule:
 model:
   backbone:
     backbone: resnet10
-  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whl-rgn_strd3/2022-05-23_21-47-56/checkpoints/epoch_180.ckpt
+#  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whl-rgn_strd3/2022-05-23_21-47-56/checkpoints/epoch_180.ckpt
+  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whlRgn_strd3/2022-06-14_07-56-38/checkpoints/last.ckpt
   hidden_dim: null
   dropout: 0.0
   semi_sup: False
@@ -55,4 +56,4 @@ model:
 logger:
   wandb:
     name: ${name}
-    tags: ["exact", "finetune"]
+    tags: ["exact", "finetune", "chkg_inOutPrst"]
