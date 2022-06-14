@@ -1,6 +1,6 @@
 _target_: src.datamodules.exact_datamodule_UVA600.ExactDataModuleUVA600
 
-data_directory: ${data_dir}/Exact/ # data_dir is specified in config.yaml
+#data_directory: ${data_dir}/Exact/ # data_dir is specified in config.yaml
 # comment for later: C:\Users\Mahdi\Desktop\Shared_folder\OneDrive_Queens_University\Project_codes\SSLmicroUltrasound\data\Exact\
 
 batch_size: 32
