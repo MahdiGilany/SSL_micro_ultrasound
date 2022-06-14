@@ -91,7 +91,7 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         pl_module.train_acc(mlp_logits.softmax(-1), y)
 
         pl_module.log("train/ssl/online_loss", mlp_loss, on_step=False, on_epoch=True, sync_dist=True)
-        pl_module.log("train/ssl/online_acc", pl_module.train_acc.computed(), on_step=False, on_epoch=True,
+        pl_module.log("train/ssl/online_acc", pl_module.train_acc.compute(), on_step=False, on_epoch=True,
                       sync_dist=True)
 
     def on_validation_batch_end(
