@@ -17,7 +17,9 @@ from src.models.components.utils import LARSWrapper, weighted_mean
 
 
 def static_lr(
-    get_lr: Callable, param_group_indexes: Sequence[int], lrs_to_replace: Sequence[float]
+    get_lr: Callable,
+    param_group_indexes: Sequence[int],
+    lrs_to_replace: Sequence[float],
 ):
     lrs = get_lr()
     for idx, lr in zip(param_group_indexes, lrs_to_replace):
@@ -46,6 +48,9 @@ class ExactSSLModule(LightningModule):
         "resnet10": resnet10,
         "resnet18": resnet18,
         "resnet50": resnet50,
+        "resnet10_feat_dim_256": resnet10_feat_dim_256,
+        "resnet10_feat_dim_128": resnet10_feat_dim_128,
+        "resnet10_feat_dim_64": resnet10_feat_dim_64,
     }
 
     def __init__(
@@ -72,10 +77,10 @@ class ExactSSLModule(LightningModule):
         self.num_classes = 2
         self.max_epochs = epoch
         self.batch_size = batch_size
-        self.optimizer = 'adam'
+        self.optimizer = "adam"
         self.lr = lr
         self.weight_decay = weight_decay
-        self.accumulate_grad_batches = 0 # todo: check larger batch size.
+        self.accumulate_grad_batches = 0  # todo: check larger batch size.
         self.scheduler = "warmup_cosine"
 
         self.lars = False
@@ -175,7 +180,7 @@ class ExactSSLModule(LightningModule):
         # check that we received the desired number of crops
         assert len(X) == self.num_crops
 
-        outs = [self._base_shared_step(x, targets) for x in X[:self.num_large_crops]]
+        outs = [self._base_shared_step(x, targets) for x in X[: self.num_large_crops]]
         outs = {k: [out[k] for out in outs] for k in outs[0].keys()}
 
         if self.scheduler is not None:
@@ -196,15 +201,21 @@ class ExactSSLModule(LightningModule):
         # check that we received the desired number of crops
         assert len(X) == self.num_crops
 
-        outs = [self._base_shared_step(x, targets) for x in X[:self.num_large_crops]]
+        outs = [self._base_shared_step(x, targets) for x in X[: self.num_large_crops]]
         outs = {k: [out[k] for out in outs] for k in outs[0].keys()}
 
         return outs
 
     def validation_epoch_end(self, outs: List[Any]):
         self.val_loss_best.update(torch.stack(outs[0]).mean())
-        self.log("val/ssl/loss_best", self.val_loss_best.compute(), on_step=False, on_epoch=True,
-                 prog_bar=True, sync_dist=True)
+        self.log(
+            "val/ssl/loss_best",
+            self.val_loss_best.compute(),
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0):
         pass
@@ -289,7 +300,9 @@ class ExactSSLModule(LightningModule):
                     optimizer,
                     warmup_epochs=self.warmup_epochs * self.num_training_steps,
                     max_epochs=self.max_epochs * self.num_training_steps,
-                    warmup_start_lr=self.warmup_start_lr if self.warmup_epochs > 0 else self.lr,
+                    warmup_start_lr=self.warmup_start_lr
+                    if self.warmup_epochs > 0
+                    else self.lr,
                     eta_min=self.min_lr,
                 ),
                 "interval": self.scheduler_interval,
