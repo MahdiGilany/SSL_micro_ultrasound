@@ -85,36 +85,64 @@ def swin_large(window_size=7, **kwargs):
 def vit_tiny(patch_size=16, **kwargs):
     """ViT-Tiny (Vit-Ti/16)"""
     model_kwargs = dict(
-        patch_size=patch_size, embed_dim=192, depth=12, num_heads=3, num_classes=0, **kwargs
+        patch_size=patch_size,
+        embed_dim=192,
+        depth=12,
+        num_heads=3,
+        num_classes=0,
+        **kwargs,
     )
-    model = _create_vision_transformer("vit_tiny_patch16_224", pretrained=False, **model_kwargs)
+    model = _create_vision_transformer(
+        "vit_tiny_patch16_224", pretrained=False, **model_kwargs
+    )
     return model
 
 
 @register_model
 def vit_small(patch_size=16, **kwargs):
     model_kwargs = dict(
-        patch_size=patch_size, embed_dim=384, depth=12, num_heads=6, num_classes=0, **kwargs
+        patch_size=patch_size,
+        embed_dim=384,
+        depth=12,
+        num_heads=6,
+        num_classes=0,
+        **kwargs,
     )
-    model = _create_vision_transformer("vit_small_patch16_224", pretrained=False, **model_kwargs)
+    model = _create_vision_transformer(
+        "vit_small_patch16_224", pretrained=False, **model_kwargs
+    )
     return model
 
 
 @register_model
 def vit_base(patch_size=16, **kwargs):
     model_kwargs = dict(
-        patch_size=patch_size, embed_dim=768, depth=12, num_heads=12, num_classes=0, **kwargs
+        patch_size=patch_size,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        num_classes=0,
+        **kwargs,
     )
-    model = _create_vision_transformer("vit_base_patch16_224", pretrained=False, **model_kwargs)
+    model = _create_vision_transformer(
+        "vit_base_patch16_224", pretrained=False, **model_kwargs
+    )
     return model
 
 
 @register_model
 def vit_large(patch_size=16, **kwargs):
     model_kwargs = dict(
-        patch_size=patch_size, embed_dim=1024, depth=24, num_heads=16, num_classes=0, **kwargs
+        patch_size=patch_size,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        num_classes=0,
+        **kwargs,
     )
-    model = _create_vision_transformer("vit_large_patch16_224", pretrained=False, **model_kwargs)
+    model = _create_vision_transformer(
+        "vit_large_patch16_224", pretrained=False, **model_kwargs
+    )
     return model
 
 
@@ -165,7 +193,13 @@ class PatchEmbed(nn.Module):
     """
 
     def __init__(
-        self, patch_size=16, stride=16, padding=0, in_chans=3, embed_dim=768, norm_layer=None
+        self,
+        patch_size=16,
+        stride=16,
+        padding=0,
+        in_chans=3,
+        embed_dim=768,
+        norm_layer=None,
     ):
         super().__init__()
         patch_size = to_2tuple(patch_size)
@@ -198,7 +232,9 @@ class LayerNormChannel(nn.Module):
         u = x.mean(1, keepdim=True)
         s = (x - u).pow(2).mean(1, keepdim=True)
         x = (x - u) / torch.sqrt(s + self.eps)
-        x = self.weight.unsqueeze(-1).unsqueeze(-1) * x + self.bias.unsqueeze(-1).unsqueeze(-1)
+        x = self.weight.unsqueeze(-1).unsqueeze(-1) * x + self.bias.unsqueeze(
+            -1
+        ).unsqueeze(-1)
         return x
 
 
@@ -235,7 +271,12 @@ class Mlp(nn.Module):
     """
 
     def __init__(
-        self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.0
+        self,
+        in_features,
+        hidden_features=None,
+        out_features=None,
+        act_layer=nn.GELU,
+        drop=0.0,
     ):
         super().__init__()
         out_features = out_features or in_features
@@ -296,7 +337,10 @@ class PoolFormerBlock(nn.Module):
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(
-            in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop
+            in_features=dim,
+            hidden_features=mlp_hidden_dim,
+            act_layer=act_layer,
+            drop=drop,
         )
 
         # The following two techniques are useful to train deep PoolFormers.
@@ -313,7 +357,8 @@ class PoolFormerBlock(nn.Module):
     def forward(self, x):
         if self.use_layer_scale:
             x = x + self.drop_path(
-                self.layer_scale_1.unsqueeze(-1).unsqueeze(-1) * self.token_mixer(self.norm1(x))
+                self.layer_scale_1.unsqueeze(-1).unsqueeze(-1)
+                * self.token_mixer(self.norm1(x))
             )
             x = x + self.drop_path(
                 self.layer_scale_2.unsqueeze(-1).unsqueeze(-1) * self.mlp(self.norm2(x))
@@ -343,7 +388,9 @@ def basic_blocks(
     """
     blocks = []
     for block_idx in range(layers[index]):
-        block_dpr = drop_path_rate * (block_idx + sum(layers[:index])) / (sum(layers) - 1)
+        block_dpr = (
+            drop_path_rate * (block_idx + sum(layers[:index])) / (sum(layers) - 1)
+        )
         blocks.append(
             PoolFormerBlock(
                 dim,
@@ -474,7 +521,11 @@ class PoolFormer(nn.Module):
         else:
             # Classifier head
             self.norm = norm_layer(embed_dims[-1])
-            self.head = nn.Linear(embed_dims[-1], num_classes) if num_classes > 0 else nn.Identity()
+            self.head = (
+                nn.Linear(embed_dims[-1], num_classes)
+                if num_classes > 0
+                else nn.Identity()
+            )
 
         self.apply(self.cls_init_weights)
 
@@ -495,7 +546,9 @@ class PoolFormer(nn.Module):
 
     def reset_classifier(self, num_classes):
         self.num_classes = num_classes
-        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        self.head = (
+            nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        )
 
     def forward_embeddings(self, x):
         x = self.patch_embed(x)
@@ -680,3 +733,30 @@ def resnet50(**kwargs):
     model_args = dict(**kwargs)
     model = _create_resnet50(num_classes=0, in_channels=1, **model_args)
     return model
+
+
+@register_model
+def resnet10_feat_dim_256():
+    from .resnets import resnet10_custom
+
+    return resnet10_custom(
+        in_channels=1, n_classes=2, layer_channels=[32, 64, 128, 256], drop_rate="none"
+    )
+
+
+@register_model
+def resnet10_feat_dim_128():
+    from .resnets import resnet10_custom
+
+    return resnet10_custom(
+        in_channels=1, n_classes=2, layer_channels=[16, 32, 64, 128], drop_rate="none"
+    )
+
+
+@register_model
+def resnet10_feat_dim_64():
+    from .resnets import resnet10_custom
+
+    return resnet10_custom(
+        in_channels=1, n_classes=2, layer_channels=[8, 16, 32, 64], drop_rate="none"
+    )
