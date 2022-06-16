@@ -51,7 +51,20 @@ class ExactSSLModule(LightningModule):
         "resnet10_feat_dim_256": resnet10_feat_dim_256,
         "resnet10_feat_dim_128": resnet10_feat_dim_128,
         "resnet10_feat_dim_64": resnet10_feat_dim_64,
+        "resnet10_compressed_to_3dim": resnet10_compressed_to_3dim,
     }
+
+    # Models in this list should have fc as the last layer, which will be removed.
+    # models OUTSIDE this list should return features directly, rather than class
+    # logits, during forward(X), as there will be no model.fc = Identity() applied
+    _RESNET_BASED_BACKBONES = [
+        "resnet10",
+        "resnet18",
+        "resnet50",
+        "resnet10_feat_dim_256",
+        "resnet10_feat_dim_128",
+        "resnet10_feat_dim_64",
+    ]
 
     def __init__(
         self,
@@ -114,7 +127,7 @@ class ExactSSLModule(LightningModule):
         self.backbone_name = backbone
 
         self.backbone = self.base_model()
-        if "resnet" in self.backbone_name:
+        if self.backbone_name in ExactSSLModule._RESNET_BASED_BACKBONES:
             self.features_dim = self.backbone.inplanes
             # remove fc layer
             self.backbone.fc = nn.Identity()

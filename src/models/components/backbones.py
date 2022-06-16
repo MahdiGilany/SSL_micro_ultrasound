@@ -2,6 +2,7 @@
 
 import copy
 import os
+from numpy import identity
 
 import torch
 import torch.nn as nn
@@ -760,3 +761,14 @@ def resnet10_feat_dim_64():
     return resnet10_custom(
         in_channels=1, n_classes=2, layer_channels=[8, 16, 32, 64], drop_rate="none"
     )
+
+
+@register_model
+def resnet10_compressed_to_3dim():
+
+    model = resnet10_feat_dim_64()
+    model.fc = torch.nn.Identity()
+    model = torch.nn.Sequential(model, torch.nn.Linear(64, 3), torch.nn.ReLU())
+    model.num_features = 3
+
+    return model
