@@ -48,6 +48,7 @@ class ExactFineTuner(SSLFineTuner):
             warn(
                 "You are using the finetuner model with no loadable checkpoint. The model will be randomly initialized."
             )
+            assert semi_sup==True, "checkpoint is not used. Semi-supervised mode must be True"
 
         # for memorizing all logits
         self.all_val_online_logits = []
