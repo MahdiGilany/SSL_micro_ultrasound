@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import Any, Callable, Dict, List, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Literal
 
 import numpy as np
 import torch
@@ -14,6 +14,8 @@ from torchmetrics.classification.accuracy import Accuracy
 
 from src.models.components.backbones import *
 from src.models.components.utils import LARSWrapper, weighted_mean
+
+import torch_optimizer
 
 
 def static_lr(
@@ -67,12 +69,13 @@ class ExactSSLModule(LightningModule):
     ]
 
     def __init__(
-        self,
-        backbone: str,
-        lr: float = 0.0001,
-        weight_decay: float = 0.000,
-        epoch: int = 100,
-        batch_size: int = 32,
+            self,
+            backbone: str,
+            lr: float = 0.0001,
+            weight_decay: float = 0.000,
+            optim_algo: Literal["Adam", "Novograd"] = "Adam",
+            epoch: int = 100,
+            batch_size: int = 32,
     ):
         super().__init__()
 
@@ -90,7 +93,7 @@ class ExactSSLModule(LightningModule):
         self.num_classes = 2
         self.max_epochs = epoch
         self.batch_size = batch_size
-        self.optimizer = "adam"
+        self.optim_algo = optim_algo
         self.lr = lr
         self.weight_decay = weight_decay
         self.accumulate_grad_batches = 0  # todo: check larger batch size.
@@ -277,18 +280,9 @@ class ExactSSLModule(LightningModule):
             i for i, m in enumerate(self.learnable_params) if m.pop("static_lr", False)
         ]
 
-        # select optimizer
-        if self.optimizer == "sgd":
-            optimizer = torch.optim.SGD
-        elif self.optimizer == "adam":
-            optimizer = torch.optim.Adam
-        elif self.optimizer == "adamw":
-            optimizer = torch.optim.AdamW
-        else:
-            raise ValueError(f"{self.optimizer} not in (sgd, adam, adamw)")
-
         # create optimizer
-        optimizer = optimizer(
+        optim_algo = self.set_optim_algo()
+        optimizer = optim_algo(
             self.learnable_params,
             lr=self.lr,
             weight_decay=self.weight_decay,
@@ -296,7 +290,7 @@ class ExactSSLModule(LightningModule):
         )
         # optionally wrap with lars
         if self.lars:
-            assert self.optimizer == "sgd", "LARS is only compatible with SGD."
+            assert self.optim_algo == "SGD", "LARS is only compatible with SGD."
             optimizer = LARSWrapper(
                 optimizer,
                 eta=self.eta_lars,
@@ -343,3 +337,16 @@ class ExactSSLModule(LightningModule):
                 scheduler.get_lr = partial_fn
 
         return [optimizer], [scheduler]
+
+    def set_optim_algo(self, **kwargs):
+        optim_algo = {
+            'SGD': torch.optim.SGD,
+            'Adam': torch.optim.Adam,
+            'AdamW': torch.optim.AdamW,
+            'Novograd': torch_optimizer.NovoGrad
+        }
+
+        if self.optim_algo not in optim_algo.keys():
+            raise ValueError(f"{self.optim_algo} not in {optim_algo.keys()}")
+
+        return optim_algo[self.optim_algo]

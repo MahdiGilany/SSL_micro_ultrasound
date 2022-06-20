@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 import torch
 import torch.nn.functional as F
 from pl_bolts.models.self_supervised.ssl_finetuner import SSLFineTuner
@@ -13,6 +13,8 @@ from torchmetrics import (
 )
 from warnings import warn
 
+import torch_optimizer
+
 
 class ExactFineTuner(SSLFineTuner):
     """
@@ -23,6 +25,7 @@ class ExactFineTuner(SSLFineTuner):
         self,
         backbone: torch.nn.Module,
         ckpt_path: Optional[str] = None,
+        optim_algo: Literal["Adam", "Novograd"] = "Adam",
         semi_sup: bool = False,
         batch_size: int = 32,
         epochs: int = 100,
@@ -37,6 +40,7 @@ class ExactFineTuner(SSLFineTuner):
         self.warmup_start_lr = 0.0
         self._num_training_steps = None
         self.scheduler_interval = "step"
+        self.optim_algo = optim_algo
         self.batch_size = batch_size
         self.max_epochs = epochs
         self.num_classes = kwargs["num_classes"]
@@ -165,13 +169,15 @@ class ExactFineTuner(SSLFineTuner):
     def configure_optimizers(self):
         opt_params = (
             [
-                {"params": self.linear_layer.parameters()},
-                {"params": self.backbone.parameters()},
+                {'params': self.linear_layer.parameters()},
+                {'params': self.backbone.parameters()},
             ]
             if self.semi_sup
             else self.linear_layer.parameters()
         )
-        optimizer = torch.optim.Adam(
+
+        optim_algo = self.set_optim_algo()
+        optimizer = optim_algo(
             opt_params,
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
@@ -202,3 +208,14 @@ class ExactFineTuner(SSLFineTuner):
             }
 
         return [optimizer], [scheduler]
+
+    def set_optim_algo(self, **kwargs):
+        optim_algo = {
+            'Adam': torch.optim.Adam,
+            'Novograd': torch_optimizer.NovoGrad
+        }
+
+        if self.optim_algo not in optim_algo.keys():
+            raise ValueError(f"{self.optim_algo} not in {optim_algo.keys()}")
+
+        return optim_algo[self.optim_algo]
