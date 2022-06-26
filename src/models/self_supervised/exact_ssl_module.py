@@ -53,7 +53,8 @@ class ExactSSLModule(LightningModule):
         "resnet10_feat_dim_256": resnet10_feat_dim_256,
         "resnet10_feat_dim_128": resnet10_feat_dim_128,
         "resnet10_feat_dim_64": resnet10_feat_dim_64,
-        "resnet10_compressed_to_3dim": resnet10_compressed_to_3dim,
+        "resnet10_compressed_to_ndim": resnet10_compressed_to_ndim,
+        "resnet10_tiny_compressed_to_3dim": resnet10_tiny_compressed_to_3dim,
     }
 
     # Models in this list should have fc as the last layer, which will be removed.
