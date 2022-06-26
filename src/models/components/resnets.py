@@ -635,7 +635,7 @@ def resnet10_custom(
     model = ResNetCustomChannels(
         BasicBlock,
         [1, 1, 1, 1],
-        channels=layer_channels,
+        layer_channels=layer_channels,
         in_channels=in_channels,
         num_classes=n_classes,
     )
