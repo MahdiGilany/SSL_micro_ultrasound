@@ -11,6 +11,7 @@ num_classes: 2
 hidden_dim: null
 
 dropout: 0.0
+optim_algo: "Adam"
 weight_decay: 1e-6
 nesterov: False
 scheduler_type: "warmup_cosine"

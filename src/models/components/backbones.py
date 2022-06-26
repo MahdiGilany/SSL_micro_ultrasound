@@ -764,11 +764,24 @@ def resnet10_feat_dim_64():
 
 
 @register_model
-def resnet10_compressed_to_3dim():
+def resnet10_tiny_compressed_to_3dim():
 
     model = resnet10_feat_dim_64()
     model.fc = torch.nn.Identity()
     model = torch.nn.Sequential(model, torch.nn.Linear(64, 3), torch.nn.ReLU())
     model.num_features = 3
+
+    return model
+
+
+@register_model
+def resnet10_compressed_to_ndim(**kwargs):
+    n=128
+    model = resnet10(**kwargs)
+    model.fc = torch.nn.Identity()
+    model = torch.nn.Sequential(
+        model, torch.nn.Linear(512, 128), torch.nn.ReLU(), torch.nn.Linear(128, n), torch.nn.ReLU()
+    )
+    model.num_features = n
 
     return model
