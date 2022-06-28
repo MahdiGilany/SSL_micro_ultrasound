@@ -1,0 +1,48 @@
+
+
+pretrain:
+
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+
+  lr: 0.0001
+  backbone: resnet10
+  weight_decay: 0.0001
+  epoch: ${trainer.pretrain.max_epochs}
+  batch_size: ${datamodule.self_supervised.batch_size}
+  
+  # method specific parameters
+  
+  proj_output_dim: 512
+  proj_hidden_dim: 512
+  sim_loss_weight: 25.
+  var_loss_weight: 25.
+  cov_loss_weight: 1.
+
+
+finetune: 
+
+  _target_: src.models.self_supervised.finetuner_module.ExactFineTuner
+
+  #backbone:
+  #  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+  #  backbone: resnet10
+  #  proj_output_dim: 512
+  #  proj_hidden_dim: 512
+
+  in_features: 512 # todo: it just works for resnet10 or resnets in general not other networks (does not change automatically)
+  num_classes: 2
+  hidden_dim: null
+
+  dropout: 0.0
+  weight_decay: 1e-6
+  nesterov: False
+  scheduler_type: "warmup_cosine"
+  decay_epochs: (60,80)
+  gamma: 0.1
+  final_lr: 0.0
+
+  #ckpt_path: null
+  semi_sup: False
+  batch_size: ${datamodule.supervised.batch_size}
+  epochs: ${trainer.finetune.max_epochs}
+  learning_rate: 0.0001 # learning rate of finetuning step
