@@ -147,3 +147,5 @@ wandb/
 .env
 .autoenv
 /old_code/
+
+/outputs
