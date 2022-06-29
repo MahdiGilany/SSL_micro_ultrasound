@@ -12,6 +12,8 @@ pretrain:
   # number of validation steps to execute at the beginning of the training
   # num_sanity_val_steps: 0
 
+  fast_dev_run: False
+
   # ckpt path
   resume_from_checkpoint: null
 
@@ -29,6 +31,8 @@ finetune:
 
   # number of validation steps to execute at the beginning of the training
   # num_sanity_val_steps: 0
+
+  fast_dev_run: False
 
   # ckpt path
   resume_from_checkpoint: null

@@ -78,7 +78,9 @@ def print_config(
     quee = []
 
     for field in print_order:
-        quee.append(field) if field in config else log.info(f"Field '{field}' not found in config")
+        quee.append(field) if field in config else log.info(
+            f"Field '{field}' not found in config"
+        )
 
     for field in config:
         if field not in quee:
@@ -93,7 +95,7 @@ def print_config(
         else:
             branch_content = str(config_group)
 
-        branch.add(rich.syntax.Syntax(branch_content, "yaml"))
+        branch.add(rich.syntax.Syntax(branch_content, "yaml", theme="solarized-light"))
 
     rich.print(tree)
 
