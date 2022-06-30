@@ -15,9 +15,9 @@ class VICReg(ExactSSLModule):
         self,
         proj_output_dim: int,
         proj_hidden_dim: int,
-        sim_loss_weight: float = 25.,
-        var_loss_weight: float = 25.,
-        cov_loss_weight: float = 25.,
+        sim_loss_weight: float = 25.0,
+        var_loss_weight: float = 25.0,
+        cov_loss_weight: float = 25.0,
         **kwargs
     ):
         """Implements VICReg (https://arxiv.org/abs/2105.04906)
@@ -102,14 +102,46 @@ class VICReg(ExactSSLModule):
             cov_loss_weight=self.cov_loss_weight,
         )
 
-        self.log("train/ssl/vicreg_loss", vicreg_loss, on_step=False, on_epoch=True, sync_dist=True)
-        self.log("train/ssl/sim_loss", all_loss[0], on_step=False, on_epoch=True, sync_dist=True)
-        self.log("train/ssl/var_loss", all_loss[1], on_step=False, on_epoch=True, sync_dist=True)
-        self.log("train/ssl/cov_loss", all_loss[2], on_step=False, on_epoch=True, sync_dist=True)
+        # divide loss by sum of loss weights to compensate -
+        # otherwise higher loss weights mean higher effective learning rate.
+        vicreg_loss = vicreg_loss / (
+            self.var_loss_weight + self.sim_loss_weight + self.cov_loss_weight
+        )
+
+        self.log(
+            "train/ssl/vicreg_loss",
+            vicreg_loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
+        self.log(
+            "train/ssl/sim_loss",
+            all_loss[0],
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
+        self.log(
+            "train/ssl/var_loss",
+            all_loss[1],
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
+        self.log(
+            "train/ssl/cov_loss",
+            all_loss[2],
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
 
         return vicreg_loss
 
-    def validation_step(self, batch: Sequence[Any], batch_idx: int, dataloader_idx: int) -> torch.Tensor:
+    def validation_step(
+        self, batch: Sequence[Any], batch_idx: int, dataloader_idx: int
+    ) -> torch.Tensor:
         """Validation step for VICReg reusing BaseMethod validation step.
 
         Args:
@@ -133,7 +165,16 @@ class VICReg(ExactSSLModule):
             cov_loss_weight=self.cov_loss_weight,
         )
 
-        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
+        vicreg_loss = vicreg_loss / (
+            self.var_loss_weight + self.sim_loss_weight + self.cov_loss_weight
+        )
+
+        kwargs = {
+            "on_step": False,
+            "on_epoch": True,
+            "sync_dist": True,
+            "add_dataloader_idx": False,
+        }
         if dataloader_idx == 0:
             self.log("val/ssl/vicreg_loss", vicreg_loss, **kwargs)
             self.log("val/ssl/sim_loss", all_loss[0], **kwargs)
