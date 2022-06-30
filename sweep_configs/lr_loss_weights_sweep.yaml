@@ -1,0 +1,34 @@
+project: exact-vicreg
+entity: ssl-exact-team
+name: lr_loss_weights_sweep
+
+program: train_combined.py
+
+method: bayes
+metric:
+  goal: maximize
+  name: val/finetune_auc_best
+
+parameters: 
+  model.pretrain.lr: 
+    distribution: log_uniform 
+    min: -10
+    max: -2
+  model.pretrain.sim_loss_weight: 
+    distribution: uniform
+    min: 0.1
+    max: 50
+  model.pretrain.var_loss_weight: 
+    distribution: uniform
+    min: 0.1
+    max: 50
+  model.pretrain.cov_loss_weight: 
+    distribution: uniform
+    min: 0.1 
+    max: 50
+
+command:
+- ${env}
+- python
+- ${program}
+- ${args_no_hyphens}
