@@ -23,11 +23,11 @@ finetune:
 
   _target_: src.models.self_supervised.finetuner_module.ExactFineTuner
 
-  #backbone:
-  #  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
-  #  backbone: resnet10
-  #  proj_output_dim: 512
-  #  proj_hidden_dim: 512
+  backbone:
+    _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+    backbone: ${model.pretrain.backbone}
+    proj_output_dim: ${model.pretrain.proj_output_dim}
+    proj_hidden_dim: ${model.pretrain.proj_hidden_dim}
 
   in_features: 512 # todo: it just works for resnet10 or resnets in general not other networks (does not change automatically)
   num_classes: 2
@@ -37,7 +37,7 @@ finetune:
   weight_decay: 1e-6
   nesterov: False
   scheduler_type: "warmup_cosine"
-  decay_epochs: (60,80)
+  decay_epochs: [60,80]
   gamma: 0.1
   final_lr: 0.0
 
