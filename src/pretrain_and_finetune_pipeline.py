@@ -2,7 +2,6 @@ import os
 from typing import List, Optional
 
 import hydra
-from omegaconf import DictConfig
 from pytorch_lightning import (
     Callback,
     LightningDataModule,
@@ -86,7 +85,17 @@ def train(config) -> Optional[float]:
         log.info("Starting training!")
         trainer.fit(model=model, datamodule=datamodule)
 
+    assert trainer.checkpoint_callback is not None
+
     ckpt_path = trainer.checkpoint_callback.best_model_path
+    optimized_metric = trainer.checkpoint_callback.monitor
+    score = trainer.checkpoint_callback.best_model_score
+    log.info(
+        f"""
+        PRETRAINING RESULTS ==== 
+        Best model score -- {optimized_metric}: {score}.
+        Best model checkpoint to saved locally at {ckpt_path}."""
+    )
 
     # FINETUNING ====================================
 
@@ -120,7 +129,7 @@ def train(config) -> Optional[float]:
 
     # Train the model
     if config.get("finetune"):
-        log.info("Starting training!")
+        log.info("Starting Finetuning!")
         trainer.fit(model=model, datamodule=datamodule)
 
     # Make sure everything closed properly
@@ -135,5 +144,16 @@ def train(config) -> Optional[float]:
     )
 
     # Print path to best checkpoint
-    if not config.trainer.get("fast_dev_run") and config.get("train"):
-        log.info(f"Best model ckpt at {trainer.checkpoint_callback.best_model_path}")
+    if not config.trainer.get("fast_dev_run") and config.get("finetune"):
+
+        assert trainer.checkpoint_callback is not None
+
+        ckpt_path = trainer.checkpoint_callback.best_model_path
+        optimized_metric = trainer.checkpoint_callback.monitor
+        score = trainer.checkpoint_callback.best_model_score
+        log.info(
+            f"""
+            FINETUNING RESULTS ==== 
+            Best model score -- {optimized_metric}: {score}.
+            Best model checkpoint to saved locally at {ckpt_path}."""
+        )

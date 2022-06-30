@@ -1,14 +1,14 @@
 pretrain: 
-  #model_checkpoint:
-  #  _target_: pytorch_lightning.callbacks.ModelCheckpoint
-  #  monitor: "val/ssl/var_loss" # name of the logged metric which determines when model is improving #todo what if not online evaluator
-  #  mode: "min" # "max" means higher metric value is better, can be also "min"
-  #  save_top_k: 1 # save k best models (determined by above metric)
-  #  save_last: True # additionaly always save model from last epoch
-  #  verbose: False
-  #  dirpath: "checkpoints/"
-  #  filename: "epoch_{epoch:03d}"
-  #  auto_insert_metric_name: False
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "val/ssl/var_loss" # name of the logged metric which determines when model is improving #todo what if not online evaluator
+    mode: "min" # "max" means higher metric value is better, can be also "min"
+    save_top_k: 1 # save k best models (determined by above metric)
+    save_last: True # additionaly always save model from last epoch
+    verbose: False
+    dirpath: "checkpoints/"
+    filename: "epoch_{epoch:03d}"
+    auto_insert_metric_name: False
 
   #early_stopping:
   #  _target_: pytorch_lightning.callbacks.EarlyStopping
@@ -43,3 +43,12 @@ finetune:
   learning_rate_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
 
+  #model_checkpoint: 
+  #  _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  #  monitor: 
+
+  metric_logger:
+    _target_: src.callbacks.metric_logger.MetricLogger
+    mode: "finetune"
+    num_classes: 2
+    corewise_inv_threshold: 0.5
