@@ -97,6 +97,45 @@ def train(config) -> Optional[float]:
         Best model checkpoint to saved locally at {ckpt_path}."""
     )
 
+    if config.get("save_feature_extractor_to_wandb"):
+
+        log.info("Saving feature extractor as artifact to wandb.")
+        import wandb
+
+        run = wandb.run
+        assert run is not None
+
+        artifact = wandb.Artifact(
+            f"feature_extractor.{run.name}",
+            type="model",
+            description="""
+            This artifact consists of the preprocessing function and pretrained 
+            feature extractor which can be used in combination to directly extract
+            features from patches of RF data, for use in downstream tasks.
+            """,
+        )
+
+        from exactvu.data import ExactSSLDataModule
+        from src.models.self_supervised.exact_ssl_module import ExactSSLModule
+
+        assert isinstance(model, ExactSSLModule)
+        assert isinstance(datamodule, ExactSSLDataModule)
+
+        feature_extractor = model.backbone
+        transform = datamodule.eval_transform
+        transform.create_pairs = False
+        import pickle
+
+        with open("feature_extractor.pkl", "wb") as f:
+            pickle.dump(feature_extractor, f)
+        with open("transform.pkl", "wb") as f:
+            pickle.dump(transform, f)
+
+        artifact.add_file("feature_extractor.pkl")
+        artifact.add_file("transform.pkl")
+
+        run.log_artifact(artifact)
+
     # FINETUNING ====================================
 
     # Init lightning datamodule
