@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from pytorch_lightning.callbacks import Callback
 
-
+## todo: not useful anymore
 class CorewiseMetrics(Callback):
     """
     This module assumes that the pl_module already has pl_module.all_val_online_logits which is all
