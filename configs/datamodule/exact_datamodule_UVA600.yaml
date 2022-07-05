@@ -8,9 +8,14 @@ num_workers: 4
 mode: "self-supervised"
 needle_region_only: True
 prostate_region_only: True
-#inv_cutoff: 0.4
 minimum_involvement: 0.4
 
+# multi-center
+cohort_specifier: "UVA600"
+combine_val_sets_for_centers: False
+train_centers: "all"
+val_centers: "all"
+test_centers: "all"
 
 resample_train_val: True
 resample_train_val_seed: 26
@@ -31,9 +36,7 @@ random_affine_shear: [0, 0, 0, 0]
 random_resized_crop: False
 random_resized_crop_scale: [0.7, 1]
 
-#out_size: 256
 balance_classes_train: True
-#balance_classes_eval: False
 normalize_mode: instance
 normalize_type: min-max
 normalize_truncate: True
