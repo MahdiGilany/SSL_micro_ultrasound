@@ -60,7 +60,12 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         if self.setup_flag:
             self.setup_flag = False
 
+            trainer.datamodule.cohort_specifier = trainer.datamodule.cohort_specifier \
+                if isinstance(trainer.datamodule.cohort_specifier, list) \
+                else [trainer.datamodule.cohort_specifier]
+
             pl_module.train_acc = Accuracy().to(pl_module.device)
+
             # pl_module.val_metrics_centers_dict = {}
             # pl_module.test_metrics_centers_dict = {}
 
@@ -144,11 +149,13 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         )
 
         # reassigning the output. This will be accessed in metric_logger ## todo check if it works
-        outputs[1] = mlp_logits
-        outputs[2] = y
+        outputs[1].append(mlp_logits)
+        outputs[2].append(y)
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        pass
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
+        pl_module.log("val/ssl/online_loss", torch.mean(torch.tensor(self.val_macroLoss_all_centers)), **kwargs)
+        pl_module.log("test/ssl/online_loss", torch.mean(torch.tensor(self.test_macroLoss_all_centers)), **kwargs)
 
     def on_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         # reset metrics
@@ -177,9 +184,8 @@ class ExactOnlineEval(SSLOnlineEvaluator):
             dataloader_idx,
             mlp_loss,
     ):
-        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
 
-        if dataloader_idx < len(pl_module.val_metrics_centers_dict):
+        if dataloader_idx < len(trainer.datamodule.cohort_specifier):
             # logit_key = pl_module.val_metrics_centers_dict.keys()[dataloader_idx]
             # self.all_val_test_mlp_logits['val_'+logit_key]
 
@@ -194,13 +200,13 @@ class ExactOnlineEval(SSLOnlineEvaluator):
             # self.all_centers_val_labels.append(y)
             self.val_macroLoss_all_centers.append(mlp_loss)
 
-            if dataloader_idx == len(pl_module.val_metrics_centers_dict) - 1:
-                # logits = torch.cat(self.all_centers_val_logits)
-                # labels = torch.cat(self.all_centers_val_labels)
-                # pl_module.val_microMetrics_all_centers(logits.softmax(-1), labels)
-                # pl_module.log_dict(pl_module.val_microMetrics_all_centers, **kwargs)
-                mlp_losses = torch.mean(self.val_macroLoss_all_centers)
-                pl_module.log("val/ssl/online_loss", mlp_losses, **kwargs)
+            # if dataloader_idx == len(pl_module.val_metrics_centers_dict) - 1:
+            #     # logits = torch.cat(self.all_centers_val_logits)
+            #     # labels = torch.cat(self.all_centers_val_labels)
+            #     # pl_module.val_microMetrics_all_centers(logits.softmax(-1), labels)
+            #     # pl_module.log_dict(pl_module.val_microMetrics_all_centers, **kwargs)
+            #     mlp_losses = torch.mean(self.val_macroLoss_all_centers)
+            #     pl_module.log("val/ssl/online_loss", mlp_losses, **kwargs)
 
         else:
             # idx = dataloader_idx - len(pl_module.val_metrics_centers_dict)
@@ -215,13 +221,13 @@ class ExactOnlineEval(SSLOnlineEvaluator):
             # self.all_centers_test_labels.append(y)
             self.test_macroLoss_all_centers.append(mlp_loss)
 
-            if dataloader_idx == len(pl_module.val_metrics_centers_dict) + len(pl_module.test_metrics_centers_dict) - 1:
-                # logits = torch.cat(self.all_centers_test_logits)
-                # labels = torch.cat(self.all_centers_test_labels)
-                # pl_module.test_microMetrics_all_centers(logits.softmax(-1), labels)
-                # pl_module.log_dict(pl_module.test_microMetrics_all_centers, **kwargs)
-                mlp_losses = torch.mean(self.test_macroLoss_all_centers)
-                pl_module.log("test/ssl/online_loss", mlp_losses, **kwargs)
+            # if dataloader_idx == len(pl_module.val_metrics_centers_dict) + len(pl_module.test_metrics_centers_dict) - 1:
+            #     # logits = torch.cat(self.all_centers_test_logits)
+            #     # labels = torch.cat(self.all_centers_test_labels)
+            #     # pl_module.test_microMetrics_all_centers(logits.softmax(-1), labels)
+            #     # pl_module.log_dict(pl_module.test_microMetrics_all_centers, **kwargs)
+            #     mlp_losses = torch.mean(self.test_macroLoss_all_centers)
+            #     pl_module.log("test/ssl/online_loss", mlp_losses, **kwargs)
 
             # pl_module.all_test_online_logits.append(mlp_logits)
             # pl_module.test_metrics(mlp_logits.softmax(-1), y)

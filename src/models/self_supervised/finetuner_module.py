@@ -123,7 +123,9 @@ class ExactFineTuner(SSLFineTuner):
         return loss, logits, y
 
     def validation_epoch_end(self, outs):
-        pass
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
+        self.log("val/finetune_loss", torch.mean(torch.tensor(self.val_macroLoss_all_centers)), prog_bar=True, **kwargs)
+        self.log("test/finetune_loss", torch.mean(torch.tensor(self.test_macroLoss_all_centers)), prog_bar=True, **kwargs)
 
     def test_step(self, batch, batch_idx):
         pass
@@ -204,13 +206,7 @@ class ExactFineTuner(SSLFineTuner):
             if dataloader_idx + 1 > self.inferred_no_centers \
             else self.inferred_no_centers
 
-        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
-
-        if dataloader_idx < int(self.inferred_no_centers/2.):
+        if dataloader_idx < self.inferred_no_centers/2.:
             self.val_macroLoss_all_centers.append(loss)
-            if dataloader_idx == int(self.inferred_no_centers/2):
-                self.log("val/finetune_loss", loss, prog_bar=True, **kwargs)
         else:
             self.test_macroLoss_all_centers.append(loss)
-            if dataloader_idx == int(self.inferred_no_centers):
-                self.log("test/finetune_loss", loss, prog_bar=True, **kwargs)

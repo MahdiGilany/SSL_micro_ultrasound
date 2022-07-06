@@ -92,6 +92,11 @@ class MetricLogger(Callback):
 
         if self.setup_flag:
             self.setup_flag = False
+
+            trainer.datamodule.cohort_specifier = trainer.datamodule.cohort_specifier \
+                if isinstance(trainer.datamodule.cohort_specifier, list) \
+                else [trainer.datamodule.cohort_specifier]
+
             self.instantiate_metrics(trainer, pl_module)
             self.initialize_best_metrics_dict(trainer, pl_module)
             self.initialize_patch_logits_dict(trainer, pl_module)
@@ -202,17 +207,17 @@ class MetricLogger(Callback):
         #     self.get_metrics(self.mode + '_core').clone(prefix=prefix).to(pl_module.device)
 
     def initialize_best_metrics_dict(self, trainer, pl_module):
-        self.val_allEpochs_patchAuc_metrics_dict = {'all': []}
-        self.val_allEpochs_coreAuc_metrics_dict = {'all': []}
-        self.test_allEpochs_patchAuc_metrics_dict = {'all': []}
-        self.test_allEpochs_coreAuc_metrics_dict = {'all': []}
+        self.val_allEpochs_patchAuc_metrics_dict = {}
+        self.val_allEpochs_coreAuc_metrics_dict = {}
+        self.test_allEpochs_patchAuc_metrics_dict = {}
+        self.test_allEpochs_coreAuc_metrics_dict = {}
 
-        self.val_allEpochs_patchAcc_metrics_dict = {'all': []}
-        self.val_allEpochs_coreAcc_metrics_dict = {'all': []}
-        self.test_allEpochs_patchAcc_metrics_dict = {'all': []}
-        self.test_allEpochs_coreAcc_metrics_dict = {'all': []}
+        self.val_allEpochs_patchAcc_metrics_dict = {}
+        self.val_allEpochs_coreAcc_metrics_dict = {}
+        self.test_allEpochs_patchAcc_metrics_dict = {}
+        self.test_allEpochs_coreAcc_metrics_dict = {}
 
-        for i, center in enumerate(trainer.datamodule.cohort_specifier):
+        for i, center in enumerate(trainer.datamodule.cohort_specifier + ['all']): # all should be after all centers
             self.val_allEpochs_patchAuc_metrics_dict[center] = []
             self.val_allEpochs_coreAuc_metrics_dict[center] = []
             self.test_allEpochs_patchAuc_metrics_dict[center] = []
@@ -228,17 +233,17 @@ class MetricLogger(Callback):
         This function defines dictionaries for memorizing logits
         that can be used for finding corewise metrics
         """
-        self.val_patch_logits_center_dict = {'all': []}
-        self.val_patch_labels_center_dict = {'all': []}
-        self.test_patch_logits_center_dict = {'all': []}
-        self.test_patch_labels_center_dict = {'all': []}
+        self.val_patch_logits_center_dict = {}
+        self.val_patch_labels_center_dict = {}
+        self.test_patch_logits_center_dict = {}
+        self.test_patch_labels_center_dict = {}
 
         # self.val_patch_logits_all_centers = []
         # self.val_patch_labels_all_centers = []
         # self.test_patch_logits_all_centers = []
         # self.test_patch_labels_all_centers = []
 
-        for i, center in enumerate(trainer.datamodule.cohort_specifier):
+        for i, center in enumerate(trainer.datamodule.cohort_specifier + ['all']): # all should be after all centers
             self.val_patch_logits_center_dict[center] = []
             self.val_patch_labels_center_dict[center] = []
             # test
@@ -284,13 +289,13 @@ class MetricLogger(Callback):
         for i, center in enumerate(trainer.datamodule.cohort_specifier):
             # getting corelens and labels from datamodule.val_ds
             if isinstance(trainer.datamodule.val_ds, dict):
-                val_corelen_cur_center = trainer.datamodule.val_ds[center].core_lengths
-                test_corelen_cur_center = trainer.datamodule.test_ds[center].core_lengths
+                val_corelen_cur_center = torch.tensor(trainer.datamodule.val_ds[center].core_lengths)
+                test_corelen_cur_center = torch.tensor(trainer.datamodule.test_ds[center].core_lengths)
                 val_corelabel_cur_center = torch.tensor(trainer.datamodule.val_ds[center].core_labels)
                 test_corelabel_cur_center = torch.tensor(trainer.datamodule.test_ds[center].core_labels)
             else:
-                val_corelen_cur_center = trainer.datamodule.val_ds.core_lengths
-                test_corelen_cur_center = trainer.datamodule.test_ds.core_lengths
+                val_corelen_cur_center = torch.tensor(trainer.datamodule.val_ds.core_lengths)
+                test_corelen_cur_center = torch.tensor(trainer.datamodule.test_ds.core_lengths)
                 val_corelabel_cur_center = torch.tensor(trainer.datamodule.val_ds.core_labels)
                 test_corelabel_cur_center = torch.tensor(trainer.datamodule.test_ds.core_labels)
 
@@ -299,10 +304,15 @@ class MetricLogger(Callback):
             self.val_core_labels_center_dict[center] = val_corelabel_cur_center
             self.test_core_labels_center_dict[center] = test_corelabel_cur_center
 
-            self.val_core_lengths_center_dict['all'] .append(val_corelen_cur_center)
+            self.val_core_lengths_center_dict['all'].append(val_corelen_cur_center)
             self.test_core_lengths_center_dict['all'].append(test_corelen_cur_center)
             self.val_core_labels_center_dict['all'].append(val_corelabel_cur_center)
             self.test_core_labels_center_dict['all'].append(test_corelabel_cur_center)
+
+        self.val_core_lengths_center_dict['all'] = torch.cat(self.val_core_lengths_center_dict['all'])
+        self.test_core_lengths_center_dict['all'] = torch.cat(self.test_core_lengths_center_dict['all'])
+        self.val_core_labels_center_dict['all'] = torch.cat(self.val_core_labels_center_dict['all'])
+        self.test_core_labels_center_dict['all'] = torch.cat(self.test_core_labels_center_dict['all'])
 
     def on_validation_batch_end(
         self,
@@ -316,61 +326,62 @@ class MetricLogger(Callback):
         """
         computing and logging all patch metrics
         """
-        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
-        if dataloader_idx < len(pl_module.val_patch_metrics_centers_dict):
+
+        out1 = outputs[1] if not isinstance(outputs[1], list) else outputs[1][0]
+        out2 = outputs[2] if not isinstance(outputs[2], list) else outputs[2][0]
+
+        if dataloader_idx < len(pl_module.val_patch_metrics_centers_dict) - 1:
             # val
-            val_patch_metrics_cur_center = pl_module.val_patch_metrics_centers_dict.values()[dataloader_idx]
+            val_patch_metrics_cur_center = list(pl_module.val_patch_metrics_centers_dict.values())[dataloader_idx]
 
             # computing patch metrics
             # logging pytorch lightning MetricCollection using log dict for only ONE center
-            logits_cur_center = outputs[1]
-            labels_cur_center = outputs[2]
+            logits_cur_center = out1.detach().cpu()
+            labels_cur_center = out2.detach().cpu()
             val_patch_metrics_cur_center(logits_cur_center.softmax(-1), labels_cur_center)
-            pl_module.log_dict(val_patch_metrics_cur_center, **kwargs)
+            # pl_module.log_dict(val_patch_metrics_cur_center, **kwargs)
 
             # memorizing logits and labels for each center separately and for all centers together
-            list_logits_cur_center = self.val_patch_logits_center_dict.values()[dataloader_idx]
-            list_labels_cur_center = self.val_patch_labels_center_dict.values()[dataloader_idx]
+            list_logits_cur_center = list(self.val_patch_logits_center_dict.values())[dataloader_idx]
+            list_labels_cur_center = list(self.val_patch_labels_center_dict.values())[dataloader_idx]
             list_logits_cur_center.append(logits_cur_center)
             list_labels_cur_center.append(labels_cur_center)
             self.val_patch_logits_center_dict['all'].append(logits_cur_center)
             self.val_patch_labels_center_dict['all'].append(labels_cur_center)
 
-
-            # calculating metrics of all centers combined
-            if dataloader_idx == len(pl_module.val_patch_metrics_centers_dict) - 1:
-                logits = torch.cat(self.val_patch_logits_center_dict['all'])
-                labels = torch.cat(self.val_patch_labels_center_dict['all'])
-                pl_module.val_patch_metrics_centers_dict['all'](logits.softmax(-1), labels)
-                pl_module.log_dict(pl_module.val_patch_metrics_centers_dict['all'], **kwargs)
-
+            # # calculating metrics of all centers combined
+            # if dataloader_idx == len(pl_module.val_patch_metrics_centers_dict) - 2:
+            #     logits = torch.cat(self.val_patch_logits_center_dict['all'])
+            #     labels = torch.cat(self.val_patch_labels_center_dict['all'])
+            #     pl_module.val_patch_metrics_centers_dict['all'](logits.softmax(-1), labels)
+            #     # pl_module.log_dict(pl_module.val_patch_metrics_centers_dict['all'], **kwargs)
         else:
             # test
-            idx = dataloader_idx - len(pl_module.val_patch_metrics_centers_dict)
-            test_patch_metrics = pl_module.test_patch_metrics_centers_dict.values()[idx]
+            idx = dataloader_idx - len(pl_module.val_patch_metrics_centers_dict) + 1
+            test_patch_metrics_cur_center = list(pl_module.test_patch_metrics_centers_dict.values())[idx]
 
             # computing patch metrics
             # logging pytorch lightning MetricCollection using log dict for only ONE center
-            logits_cur_center = outputs[1]
-            labels_cur_center = outputs[2]
-            test_patch_metrics(logits_cur_center.softmax(-1), labels_cur_center)
-            pl_module.log_dict(test_patch_metrics, **kwargs)
+            logits_cur_center = out1.detach().cpu()
+            labels_cur_center = out2.detach().cpu()
+            test_patch_metrics_cur_center(logits_cur_center.softmax(-1), labels_cur_center)
+            # pl_module.log_dict(test_patch_metrics_cur_center, **kwargs)
 
             # memorizing logits and labels for each center separately and for all centers together
-            list_logits_cur_center = self.test_patch_logits_center_dict.values()[idx]
-            list_labels_cur_center = self.test_patch_labels_center_dict.values()[idx]
+            list_logits_cur_center = list(self.test_patch_logits_center_dict.values())[idx]
+            list_labels_cur_center = list(self.test_patch_labels_center_dict.values())[idx]
             list_logits_cur_center.append(logits_cur_center)
             list_labels_cur_center.append(labels_cur_center)
             self.test_patch_logits_center_dict['all'].append(logits_cur_center)
             self.test_patch_labels_center_dict['all'].append(labels_cur_center)
 
-            # calculating metrics of all centers combined
-            if dataloader_idx == \
-                    len(pl_module.val_patch_metrics_centers_dict) + len(pl_module.test_patch_metrics_centers_dict) - 1:
-                logits = torch.cat(self.test_patch_logits_center_dict['all'])
-                labels = torch.cat(self.test_patch_labels_center_dict['all'])
-                pl_module.test_patch_metrics_centers_dict['all'](logits.softmax(-1), labels)
-                pl_module.log_dict(pl_module.test_patch_metrics_centers_dict['all'], **kwargs)
+            # # calculating metrics of all centers combined
+            # if dataloader_idx == \
+            #         len(pl_module.val_patch_metrics_centers_dict) + len(pl_module.test_patch_metrics_centers_dict) - 3:
+            #     logits = torch.cat(self.test_patch_logits_center_dict['all'])
+            #     labels = torch.cat(self.test_patch_labels_center_dict['all'])
+            #     pl_module.test_patch_metrics_centers_dict['all'](logits.softmax(-1), labels)
+            #     # pl_module.log_dict(pl_module.test_patch_metrics_centers_dict['all'], **kwargs)
         # for i, val_patch_metrics in enumerate(pl_module.val_patch_metrics_centers_dict.values()):
         #     logits = outputs[1]
         #     labels = outputs[2]
@@ -401,6 +412,7 @@ class MetricLogger(Callback):
         """
 
         # ### patchwise ###
+        self.log_patch_metrics(trainer, pl_module)
         # logits = torch.cat(pl_module.all_val_online_logits).detach().cpu()
         # labels = torch.tensor(trainer.datamodule.val_ds.labels)[:len(logits)]
         # scores = self.compute_patch_metrics(logits, labels, prefix=self.val_prefix, scores={})
@@ -431,6 +443,23 @@ class MetricLogger(Callback):
         # ### loging all ###
         # self.log_scores(pl_module, scores)
         # self.log_core_scatter(trainer, val_core_probs, test_core_probs)
+    def log_patch_metrics(self, trainer, pl_module):
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
+
+        for i, center in enumerate(pl_module.val_patch_metrics_centers_dict.keys()):
+            val_patch_metrics_cur_center = list(pl_module.val_patch_metrics_centers_dict.values())[i]
+            test_patch_metrics_cur_center = list(pl_module.test_patch_metrics_centers_dict.values())[i]
+
+            if center == 'all':
+                val_logits = torch.cat(self.val_patch_logits_center_dict['all'])
+                val_labels = torch.cat(self.val_patch_labels_center_dict['all'])
+                test_logits = torch.cat(self.test_patch_logits_center_dict['all'])
+                test_labels = torch.cat(self.test_patch_labels_center_dict['all'])
+                val_patch_metrics_cur_center(val_logits.softmax(-1), val_labels)
+                test_patch_metrics_cur_center(test_logits.softmax(-1), test_labels)
+
+            pl_module.log_dict(val_patch_metrics_cur_center.compute(), **kwargs)
+            pl_module.log_dict(test_patch_metrics_cur_center.compute(), **kwargs)
 
     def find_core_logits(self):
         self.val_core_logits_center_dict = {}
@@ -476,7 +505,7 @@ class MetricLogger(Callback):
     def aggregate_patch_preds(self, all_val_preds, corelen_val):
         """This function takes the mean of all patch preds inside a core as prediction of that core."""
         all_corepreds = []
-        corelen_cumsum = torch.cumsum(torch.tensor([0] + corelen_val), dim=0)
+        corelen_cumsum = torch.cumsum(torch.tensor([0] + list(corelen_val)), dim=0)
 
         for i, value in enumerate(corelen_cumsum):
             if i == 0: # or val > len(all_val_preds):
@@ -493,17 +522,25 @@ class MetricLogger(Callback):
         computing and logging all core metrics
         """
         for i, center in enumerate(pl_module.val_core_metrics_centers_dict.keys()):
-            val_cur_core_metric = pl_module.val_core_metrics_centers_dict.keys()[center]
+            val_cur_core_metric = list(pl_module.val_core_metrics_centers_dict.values())[i]
             val_core_cur_logits = self.val_core_logits_center_dict[center]
             val_core_cur_labels = self.val_core_labels_center_dict[center]
-            val_cur_core_metric(val_core_cur_logits.softmax(-1), val_core_cur_labels)
-            pl_module.log_dict(val_cur_core_metric, **self.kwargs)
 
-            test_cur_core_metric = pl_module.test_core_metrics_centers_dict.keys()[center]
+            val_notnan = ~torch.isnan(val_core_cur_logits)
+            val_core_cur_logits = val_core_cur_logits[val_notnan]
+            val_core_cur_logits = torch.stack([1.- val_core_cur_logits, val_core_cur_logits], dim=1)
+            val_cur_core_metric(val_core_cur_logits.softmax(-1), val_core_cur_labels[val_notnan])
+            pl_module.log_dict(val_cur_core_metric.compute(), **self.kwargs)
+
+            test_cur_core_metric = list(pl_module.test_core_metrics_centers_dict.values())[i]
             test_core_cur_logits = self.test_core_logits_center_dict[center]
             test_core_cur_labels = self.test_core_labels_center_dict[center]
-            test_cur_core_metric(test_core_cur_logits.softmax(-1), test_core_cur_labels)
-            pl_module.log_dict(test_cur_core_metric, **self.kwargs)
+
+            test_notnan = ~torch.isnan(test_core_cur_logits)
+            test_core_cur_logits = test_core_cur_logits[test_notnan]
+            test_core_cur_logits = torch.stack([1. - test_core_cur_logits, test_core_cur_logits], dim=1)
+            test_cur_core_metric(test_core_cur_logits.softmax(-1), test_core_cur_labels[test_notnan])
+            pl_module.log_dict(test_cur_core_metric.compute(), **self.kwargs)
 
         # scores[f'{prefix}{self.mode}_core_auc'] = auroc(probs, labels)
         # scores[f'{prefix}{self.mode}_core_acc_macro'] = accuracy(probs, labels, average='macro',
@@ -577,26 +614,26 @@ class MetricLogger(Callback):
         max_scores = {}
 
         for i, center in enumerate(trainer.datamodule.cohort_specifier):
-            max_scores[f"{self.val_prefix}{center}/{self.mode}_auc_best"] = self.val_allEpochs_patchAuc_metrics_dict[center]
-            max_scores[f"{self.val_prefix}{center}/{self.mode}_core_auc_best"] = self.val_allEpochs_coreAuc_metrics_dict[center]
-            max_scores[f"{self.test_prefix}{center}/{self.mode}_auc_best"] = self.test_allEpochs_patchAuc_metrics_dict[center]
-            max_scores[f"{self.test_prefix}{center}/{self.mode}_core_auc_best"] = self.test_allEpochs_coreAuc_metrics_dict[center]
+            max_scores[f"{self.val_prefix}{center}/{self.mode}_auc_best"] = self.val_allEpochs_patchAuc_metrics_dict[center][self.best_epoch]
+            max_scores[f"{self.val_prefix}{center}/{self.mode}_core_auc_best"] = self.val_allEpochs_coreAuc_metrics_dict[center][self.best_epoch]
+            max_scores[f"{self.test_prefix}{center}/{self.mode}_auc_best"] = self.test_allEpochs_patchAuc_metrics_dict[center][self.best_epoch]
+            max_scores[f"{self.test_prefix}{center}/{self.mode}_core_auc_best"] = self.test_allEpochs_coreAuc_metrics_dict[center][self.best_epoch]
 
-            max_scores[f"{self.val_prefix}{center}/{self.mode}_acc_best"] = self.val_allEpochs_patchAcc_metrics_dict[center]
-            max_scores[f"{self.val_prefix}{center}/{self.mode}_core_acc_best"] = self.val_allEpochs_coreAcc_metrics_dict[center]
-            max_scores[f"{self.test_prefix}{center}/{self.mode}_acc_best"] = self.test_allEpochs_patchAcc_metrics_dict[center]
-            max_scores[f"{self.test_prefix}{center}/{self.mode}_core_acc_best"] = self.test_allEpochs_coreAcc_metrics_dict[center]
+            max_scores[f"{self.val_prefix}{center}/{self.mode}_acc_best"] = self.val_allEpochs_patchAcc_metrics_dict[center][self.best_epoch]
+            max_scores[f"{self.val_prefix}{center}/{self.mode}_core_acc_best"] = self.val_allEpochs_coreAcc_metrics_dict[center][self.best_epoch]
+            max_scores[f"{self.test_prefix}{center}/{self.mode}_acc_best"] = self.test_allEpochs_patchAcc_metrics_dict[center][self.best_epoch]
+            max_scores[f"{self.test_prefix}{center}/{self.mode}_core_acc_best"] = self.test_allEpochs_coreAcc_metrics_dict[center][self.best_epoch]
 
 
-        max_scores[f"{self.val_prefix}{self.mode}_auc_best"] = self.val_allEpochs_patchAuc_metrics_dict['all']
-        max_scores[f"{self.val_prefix}{self.mode}_core_auc_best"] = self.val_allEpochs_coreAuc_metrics_dict['all']
-        max_scores[f"{self.test_prefix}{self.mode}_auc_best"] = self.test_allEpochs_patchAuc_metrics_dict['all']
-        max_scores[f"{self.test_prefix}{self.mode}_core_auc_best"] = self.test_allEpochs_coreAuc_metrics_dict['all']
+        max_scores[f"{self.val_prefix}{self.mode}_auc_best"] = self.val_allEpochs_patchAuc_metrics_dict['all'][self.best_epoch]
+        max_scores[f"{self.val_prefix}{self.mode}_core_auc_best"] = self.val_allEpochs_coreAuc_metrics_dict['all'][self.best_epoch]
+        max_scores[f"{self.test_prefix}{self.mode}_auc_best"] = self.test_allEpochs_patchAuc_metrics_dict['all'][self.best_epoch]
+        max_scores[f"{self.test_prefix}{self.mode}_core_auc_best"] = self.test_allEpochs_coreAuc_metrics_dict['all'][self.best_epoch]
 
-        max_scores[f"{self.val_prefix}{self.mode}_acc_best"] = self.val_allEpochs_patchAcc_metrics_dict['all']
-        max_scores[f"{self.val_prefix}{self.mode}_core_acc_best"] = self.val_allEpochs_coreAcc_metrics_dict['all']
-        max_scores[f"{self.test_prefix}{self.mode}_acc_best"] = self.test_allEpochs_patchAcc_metrics_dict['all']
-        max_scores[f"{self.test_prefix}{self.mode}_core_acc_best"] = self.test_allEpochs_coreAcc_metrics_dict['all']
+        max_scores[f"{self.val_prefix}{self.mode}_acc_best"] = self.val_allEpochs_patchAcc_metrics_dict['all'][self.best_epoch]
+        max_scores[f"{self.val_prefix}{self.mode}_core_acc_best"] = self.val_allEpochs_coreAcc_metrics_dict['all'][self.best_epoch]
+        max_scores[f"{self.test_prefix}{self.mode}_acc_best"] = self.test_allEpochs_patchAcc_metrics_dict['all'][self.best_epoch]
+        max_scores[f"{self.test_prefix}{self.mode}_core_acc_best"] = self.test_allEpochs_coreAcc_metrics_dict['all'][self.best_epoch]
 
         pl_module.log_dict(max_scores, **self.kwargs)
 

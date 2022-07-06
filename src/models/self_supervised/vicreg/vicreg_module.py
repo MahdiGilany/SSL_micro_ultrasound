@@ -147,27 +147,32 @@ class VICReg(ExactSSLModule):
 
         self.logging_combined_centers_losses(dataloader_idx, vicreg_loss, all_losses)
 
-        return vicreg_loss
+        return vicreg_loss, [], [] # these two lists are a workaround to use online_evaluator + metric logger
+
+    def validation_epoch_end(self, outs: List[Any]):
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
+
+        self.log("val/ssl/vicreg_loss", torch.mean(torch.tensor(self.val_vicregLoss_all_centers)), **kwargs)
+        self.log("val/ssl/sim_loss", torch.mean(torch.tensor(self.val_simLoss_all_centers)), **kwargs)
+        self.log("val/ssl/var_loss", torch.mean(torch.tensor(self.val_varLoss_all_centers)), **kwargs)
+        self.log("val/ssl/cov_loss", torch.mean(torch.tensor(self.val_covLoss_all_centers)), **kwargs)
+
+        self.log("test/ssl/vicreg_loss", torch.mean(torch.tensor(self.test_vicregLoss_all_centers)), **kwargs)
+        self.log("test/ssl/sim_loss", torch.mean(torch.tensor(self.test_simLoss_all_centers)), **kwargs)
+        self.log("test/ssl/var_loss", torch.mean(torch.tensor(self.test_varLoss_all_centers)), **kwargs)
+        self.log("test/ssl/cov_loss", torch.mean(torch.tensor(self.test_covLoss_all_centers)), **kwargs)
 
     def logging_combined_centers_losses(self, dataloader_idx, vicreg_loss, all_losses):
         self.inferred_no_centers = dataloader_idx + 1 \
             if dataloader_idx + 1 > self.inferred_no_centers \
             else self.inferred_no_centers
 
-        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
-
-        if dataloader_idx < int(self.inferred_no_centers/2.):
+        if dataloader_idx < self.inferred_no_centers/2.:
             # all these losses are macro to the centers
             self.val_vicregLoss_all_centers.append(vicreg_loss)
             self.val_simLoss_all_centers.append(all_losses[0])
             self.val_varLoss_all_centers.append(all_losses[1])
             self.val_covLoss_all_centers.append(all_losses[2])
-
-            if dataloader_idx == int(self.inferred_no_centers/2):
-                self.log("val/ssl/vicreg_loss", torch.mean(self.val_vicregLoss_all_centers), **kwargs)
-                self.log("val/ssl/sim_loss", torch.mean(self.val_simLoss_all_centers), **kwargs)
-                self.log("val/ssl/var_loss", torch.mean(self.val_varLoss_all_centers), **kwargs)
-                self.log("val/ssl/cov_loss", torch.mean(self.val_covLoss_all_centers), **kwargs)
 
         else:
             # all these losses are macro to the centers
@@ -175,13 +180,6 @@ class VICReg(ExactSSLModule):
             self.test_simLoss_all_centers.append(all_losses[0])
             self.test_varLoss_all_centers.append(all_losses[1])
             self.test_covLoss_all_centers.append(all_losses[2])
-
-            if dataloader_idx == int(self.inferred_no_centers):
-                self.log("test/ssl/vicreg_loss", torch.mean(self.test_vicregLoss_all_centers), **kwargs)
-                self.log("test/ssl/sim_loss", torch.mean(self.test_simLoss_all_centers), **kwargs)
-                self.log("test/ssl/var_loss", torch.mean(self.test_varLoss_all_centers), **kwargs)
-                self.log("test/ssl/cov_loss", torch.mean(self.test_covLoss_all_centers), **kwargs)
-
             # self.log("test/ssl/vicreg_loss", vicreg_loss, **kwargs)
             # self.log("test/ssl/sim_loss", all_losses[0], **kwargs)
             # self.log("test/ssl/var_loss", all_losses[1], **kwargs)
