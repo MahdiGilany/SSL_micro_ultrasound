@@ -1,0 +1,38 @@
+pretrain: 
+
+  _target_: pytorch_lightning.Trainer
+
+  gpus: 1
+
+  min_epochs: 100
+  max_epochs: 200
+
+  limit_train_batches: null
+
+  # number of validation steps to execute at the beginning of the training
+  # num_sanity_val_steps: 0
+
+  fast_dev_run: False
+
+  # ckpt path
+  resume_from_checkpoint: null
+
+
+finetune: 
+
+  _target_: pytorch_lightning.Trainer
+
+  gpus: 1
+
+  min_epochs: null
+  max_epochs: 100
+
+  limit_train_batches: null
+
+  # number of validation steps to execute at the beginning of the training
+  # num_sanity_val_steps: 0
+
+  fast_dev_run: False
+
+  # ckpt path
+  resume_from_checkpoint: null

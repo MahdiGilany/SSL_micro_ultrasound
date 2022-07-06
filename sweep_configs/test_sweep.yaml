@@ -1,0 +1,22 @@
+project: test
+entity: ssl-exact-team
+name: test_ssl_sweep
+
+program: train_combined.py
+
+method: bayes
+metric:
+  goal: minimize
+  name: val/finetune_auc_best
+
+parameters: 
+  model.pretrain.lr: 
+    distribution: log_uniform 
+    min: -10
+    max: -3
+
+command:
+- ${env}
+- python
+- ${program}
+- ${args_no_hyphens}
