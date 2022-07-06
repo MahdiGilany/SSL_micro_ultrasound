@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "fintun_whlRgn_preTrnUVA600_prstRgn"
+name: "fintun_prstRgn_preTrnUVA600"
 
 seed: 12345
 
@@ -28,10 +28,10 @@ trainer:
 datamodule:
   batch_size: 32
   num_workers: 4
-  mode: "supervised"
+  mode: 'supervised'
+  cohort_specifier: 'UVA600'
   needle_region_only: True
   prostate_region_only: True
-  #  inv_cutoff: 0.4
   minimum_involvement: 0.4
   train_val_ratio: 0.25 # ratio of train to val dataset length
   resample_train_val_seed: 26 # random state for above random split
@@ -39,15 +39,14 @@ datamodule:
   patch_stride_mm: [1, 1]
   needle_region_intersection_threshold: 0.6
   prostate_region_intersection_threshold: 0.9
-
   use_augmentations: False
   aug_prob: 0.4 # probability of augmentations
 
 model:
   backbone:
     backbone: resnet10
-#  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whl-rgn_strd3/2022-05-23_21-47-56/checkpoints/epoch_180.ckpt
-  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_whlRgn_strd3/2022-06-14_07-56-38/checkpoints/last.ckpt
+#  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_prstRgn_strd3/2022-06-17_21-03-13/checkpoints/epoch_189.ckpt #26
+  ckpt_path: ${original_work_dir}/logs/experiments/multiruns/vicreg_UVA600_prstRgn_strd3/2022-06-18_17-45-02/checkpoints/epoch_195_13.ckpt #13
   hidden_dim: null
   dropout: 0.0
   semi_sup: False
@@ -56,4 +55,6 @@ model:
 logger:
   wandb:
     name: ${name}
-    tags: ["exact", "finetune", "chkg_inOutPrst"]
+    tags: ["exact", "finetune", "multicenter"]
+    entity: mahdigilany
+    project: multicenter

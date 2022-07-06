@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "vicreg_UVA600_whlRgn_strd3"
+name: "vicreg_UVA600_prstRgn_strd3"
 
 seed: 12345
 
@@ -28,10 +28,10 @@ trainer:
 datamodule:
   batch_size: 32
   num_workers: 4
-  mode: "self-supervised"
+  mode: 'self-supervised'
+  cohort_specifier: 'UVA600'
   needle_region_only: False
   prostate_region_only: True
-#  inv_cutoff: 0.4
   minimum_involvement: 0.4
   train_val_ratio: 0.25 # ratio of train to val dataset length
   resample_train_val_seed: 26 # random state for above random split
@@ -57,14 +57,16 @@ model:
 logger:
   wandb:
     name: ${name} #_srs${datamodule.resample_train_val_seed}_split${datamodule.train_val_ratio}
-    tags: ["exact", "vicreg", "first_inPrst"]
+    tags: ['exact", "vicreg", "var_loss", "multicenter"]
+    entity: mahdigilany
+    project: multicenter
 
 # comment all these when using needle region only
 callbacks:
   model_checkpoint:
-    monitor: "val/ssl/sim_loss"
+    monitor: "val/ssl/var_loss"
     mode: "min"
 
   early_stopping:
-    monitor: "val/ssl/sim_loss"
+    monitor: "val/ssl/var_loss"
     mode: "min"
