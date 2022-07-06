@@ -216,15 +216,3 @@ class VICReg(ExactSSLModule):
             self.test_simLoss_all_centers.append(all_losses[0])
             self.test_varLoss_all_centers.append(all_losses[1])
             self.test_covLoss_all_centers.append(all_losses[2])
-            # self.log("test/ssl/vicreg_loss", vicreg_loss, **kwargs)
-            # self.log("test/ssl/sim_loss", all_losses[0], **kwargs)
-            # self.log("test/ssl/var_loss", all_losses[1], **kwargs)
-            # self.log("test/ssl/cov_loss", all_losses[2], **kwargs)
-
-
-
-            # pl_module.all_test_online_logits.append(mlp_logits)
-            # pl_module.test_metrics(mlp_logits.softmax(-1), y)
-            #
-            # pl_module.log_dict(pl_module.test_metrics, **kwargs)
-            # pl_module.log("test/ssl/online_loss", mlp_loss, **kwargs)

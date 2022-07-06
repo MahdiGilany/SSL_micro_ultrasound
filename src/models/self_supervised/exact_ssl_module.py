@@ -225,15 +225,6 @@ class ExactSSLModule(LightningModule):
 
     def validation_epoch_end(self, outs: List[Any]):
         pass
-        # self.val_loss_best.update(torch.stack(outs[0]).mean())
-        # self.log(
-        #     "val/ssl/loss_best",
-        #     self.val_loss_best.compute(),
-        #     on_step=False,
-        #     on_epoch=True,
-        #     prog_bar=True,
-        #     sync_dist=True,
-        # )
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0):
         pass
