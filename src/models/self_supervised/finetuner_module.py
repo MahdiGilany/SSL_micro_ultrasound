@@ -54,23 +54,22 @@ class ExactFineTuner(SSLFineTuner):
             )
             assert semi_sup==True, "checkpoint is not used. Semi-supervised mode must be True"
 
-        # for memorizing all logits
-        self.all_val_online_logits = []
-        self.all_test_online_logits = []
+        # # for memorizing all logits
+        # self.all_val_online_logits = []
+        # self.all_test_online_logits = []
 
         # # metrics for logging
-        metrics = MetricCollection(
-            {
-                # 'finetune_acc': Accuracy(num_classes=self.num_classes, multiclass=True),
-                "finetune_acc_macro": Accuracy(
-                    num_classes=self.num_classes, average="macro", multiclass=True
-                ),
-                # 'finetune_auc': AUROC(num_classes=self.num_classes),
-            }
-        )
+        # metrics = MetricCollection({
+        #         # 'finetune_acc': Accuracy(num_classes=self.num_classes, multiclass=True),
+        #         "finetune_acc_macro": Accuracy(num_classes=self.num_classes, average="macro", multiclass=True),
+        #         # 'finetune_auc': AUROC(num_classes=self.num_classes),
+        #     })
         self.train_acc = Accuracy()
-        self.val_metrics = metrics.clone(prefix="val/")
-        self.test_metrics = metrics.clone(prefix="test/")
+        self.inferred_no_centers = 1
+
+        self.val_macroLoss_all_centers = []
+        self.test_macroLoss_all_centers = []
+
 
     def on_train_epoch_start(self) -> None:
         """Changing model to eval() mode has to happen at the
@@ -118,43 +117,24 @@ class ExactFineTuner(SSLFineTuner):
 
     def validation_step(self, batch, batch_idx, dataloader_idx: int):
         loss, logits, y = self.shared_step(batch)
-        kwargs = {
-            "on_step": False,
-            "on_epoch": True,
-            "sync_dist": True,
-            "add_dataloader_idx": False,
-        }
 
-        if dataloader_idx == 0:
-            self.all_val_online_logits.append(logits)
-            self.val_metrics(logits.softmax(-1), y)
+        self.logging_combined_centers_loss(dataloader_idx, loss)
 
-            self.log_dict(self.val_metrics, prog_bar=True, **kwargs)
-            self.log("val/finetune_loss", loss, prog_bar=True, **kwargs)
-
-        elif dataloader_idx == 1:
-            self.all_test_online_logits.append(logits)
-            self.test_metrics(logits.softmax(-1), y)
-
-            self.log_dict(self.test_metrics, prog_bar=True, **kwargs)
-            self.log("test/finetune_loss", loss, prog_bar=True, **kwargs)
-
-        return loss
+        return loss, logits, y
 
     def validation_epoch_end(self, outs):
-        pass
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
+        self.log("val/finetune_loss", torch.mean(torch.tensor(self.val_macroLoss_all_centers)), prog_bar=True, **kwargs)
+        self.log("test/finetune_loss", torch.mean(torch.tensor(self.test_macroLoss_all_centers)), prog_bar=True, **kwargs)
 
     def test_step(self, batch, batch_idx):
         pass
 
     def on_epoch_end(self):
-        # reset all saved logits
-        self.all_val_online_logits = []
-        self.all_test_online_logits = []
-
         self.train_acc.reset()
-        self.val_metrics.reset()
-        self.test_metrics.reset()
+
+        self.val_macroLoss_all_centers = []
+        self.test_macroLoss_all_centers = []
 
     @property
     def num_training_steps(self) -> int:
@@ -219,3 +199,14 @@ class ExactFineTuner(SSLFineTuner):
             raise ValueError(f"{self.optim_algo} not in {optim_algo.keys()}")
 
         return optim_algo[self.optim_algo]
+
+    def logging_combined_centers_loss(self, dataloader_idx, loss):
+        """macro loss for centers"""
+        self.inferred_no_centers = dataloader_idx + 1 \
+            if dataloader_idx + 1 > self.inferred_no_centers \
+            else self.inferred_no_centers
+
+        if dataloader_idx < self.inferred_no_centers/2.:
+            self.val_macroLoss_all_centers.append(loss)
+        else:
+            self.test_macroLoss_all_centers.append(loss)

@@ -47,6 +47,18 @@ class VICReg(ExactSSLModule):
             nn.Linear(proj_hidden_dim, proj_output_dim),
         )
 
+        self.inferred_no_centers = 1
+
+        self.val_vicregLoss_all_centers = []
+        self.val_simLoss_all_centers = []
+        self.val_varLoss_all_centers = []
+        self.val_covLoss_all_centers = []
+
+        self.test_vicregLoss_all_centers = []
+        self.test_simLoss_all_centers = []
+        self.test_varLoss_all_centers = []
+        self.test_covLoss_all_centers = []
+
     @property
     def learnable_params(self) -> List[dict]:
         """Adds projector parameters to the parent's learnable parameters.
@@ -157,33 +169,62 @@ class VICReg(ExactSSLModule):
         z1, z2 = out["z"]
 
         # ------- vicreg loss -------
-        vicreg_loss, all_loss = vicreg_loss_func(
+        vicreg_loss, all_losses = vicreg_loss_func(
             z1,
             z2,
             sim_loss_weight=self.sim_loss_weight,
             var_loss_weight=self.var_loss_weight,
             cov_loss_weight=self.cov_loss_weight,
         )
-
+        
         vicreg_loss = vicreg_loss / (
             self.var_loss_weight + self.sim_loss_weight + self.cov_loss_weight
         )
+        
+        self.logging_combined_centers_losses(dataloader_idx, vicreg_loss, all_losses)
 
-        kwargs = {
-            "on_step": False,
-            "on_epoch": True,
-            "sync_dist": True,
-            "add_dataloader_idx": False,
-        }
-        if dataloader_idx == 0:
-            self.log("val/ssl/vicreg_loss", vicreg_loss, **kwargs)
-            self.log("val/ssl/sim_loss", all_loss[0], **kwargs)
-            self.log("val/ssl/var_loss", all_loss[1], **kwargs)
-            self.log("val/ssl/cov_loss", all_loss[2], **kwargs)
-        elif dataloader_idx == 1:
-            self.log("test/ssl/vicreg_loss", vicreg_loss, **kwargs)
-            self.log("test/ssl/sim_loss", all_loss[0], **kwargs)
-            self.log("test/ssl/var_loss", all_loss[1], **kwargs)
-            self.log("test/ssl/cov_loss", all_loss[2], **kwargs)
+        return vicreg_loss, [], [] # these two lists are a workaround to use online_evaluator + metric logger
 
-        return vicreg_loss
+    def validation_epoch_end(self, outs: List[Any]):
+        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
+
+        self.log("val/ssl/vicreg_loss", torch.mean(torch.tensor(self.val_vicregLoss_all_centers)), **kwargs)
+        self.log("val/ssl/sim_loss", torch.mean(torch.tensor(self.val_simLoss_all_centers)), **kwargs)
+        self.log("val/ssl/var_loss", torch.mean(torch.tensor(self.val_varLoss_all_centers)), **kwargs)
+        self.log("val/ssl/cov_loss", torch.mean(torch.tensor(self.val_covLoss_all_centers)), **kwargs)
+
+        self.log("test/ssl/vicreg_loss", torch.mean(torch.tensor(self.test_vicregLoss_all_centers)), **kwargs)
+        self.log("test/ssl/sim_loss", torch.mean(torch.tensor(self.test_simLoss_all_centers)), **kwargs)
+        self.log("test/ssl/var_loss", torch.mean(torch.tensor(self.test_varLoss_all_centers)), **kwargs)
+        self.log("test/ssl/cov_loss", torch.mean(torch.tensor(self.test_covLoss_all_centers)), **kwargs)
+
+    def logging_combined_centers_losses(self, dataloader_idx, vicreg_loss, all_losses):
+        self.inferred_no_centers = dataloader_idx + 1 \
+            if dataloader_idx + 1 > self.inferred_no_centers \
+            else self.inferred_no_centers
+
+        if dataloader_idx < self.inferred_no_centers/2.:
+            # all these losses are macro to the centers
+            self.val_vicregLoss_all_centers.append(vicreg_loss)
+            self.val_simLoss_all_centers.append(all_losses[0])
+            self.val_varLoss_all_centers.append(all_losses[1])
+            self.val_covLoss_all_centers.append(all_losses[2])
+
+        else:
+            # all these losses are macro to the centers
+            self.test_vicregLoss_all_centers.append(vicreg_loss)
+            self.test_simLoss_all_centers.append(all_losses[0])
+            self.test_varLoss_all_centers.append(all_losses[1])
+            self.test_covLoss_all_centers.append(all_losses[2])
+            # self.log("test/ssl/vicreg_loss", vicreg_loss, **kwargs)
+            # self.log("test/ssl/sim_loss", all_losses[0], **kwargs)
+            # self.log("test/ssl/var_loss", all_losses[1], **kwargs)
+            # self.log("test/ssl/cov_loss", all_losses[2], **kwargs)
+
+
+
+            # pl_module.all_test_online_logits.append(mlp_logits)
+            # pl_module.test_metrics(mlp_logits.softmax(-1), y)
+            #
+            # pl_module.log_dict(pl_module.test_metrics, **kwargs)
+            # pl_module.log("test/ssl/online_loss", mlp_loss, **kwargs)
