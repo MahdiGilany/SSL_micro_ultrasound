@@ -14,13 +14,13 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "vicreg_online-eval_augpr.4-intes"
+name: "vicreg_UVA600_prstRgn_strd3"
 
 seed: 12345
 
 trainer:
-  min_epochs: 100
-  max_epochs: 100
+  min_epochs: 200
+  max_epochs: 200
   gradient_clip_val: null
   limit_train_batches: null
   limit_val_batches: null
@@ -28,23 +28,20 @@ trainer:
 datamodule:
   batch_size: 32
   num_workers: 4
-  train_val_split: 0.25 # ratio of train to val dataset length
-  split_randomstate: 26 # random state for above random split
-  dataset_hyp: # dataset hyperparameters
-    SSL: True
-    patch_sz: 5 # patch size in mm
-    jump_sz: 1 # jump of each patch to create next patch
-    inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val
-    # list of applied augmentations ['RandomInvert', 'RandomVerticalFlip', 'RandomHorizontalFlip', 'RandomAffine', 'RandomErasing', 'RandomEqualize']
-    aug_list:
-      [
-#        "RandomInvert",
-        "RandomVerticalFlip",
-        "RandomHorizontalFlip",
-        "RandomAffine",
-        "RandomErasing",
-      ]
-    aug_prob: 0.4 # probability of augmentations
+  mode: 'self-supervised'
+  cohort_specifier: 'UVA600'
+  needle_region_only: False
+  prostate_region_only: True
+  minimum_involvement: 0.4
+  train_val_ratio: 0.25 # ratio of train to val dataset length
+  resample_train_val_seed: 26 # random state for above random split
+  patch_size_mm: [5, 5]
+  patch_stride_mm: [3, 3]
+  needle_region_intersection_threshold: 0.6
+  prostate_region_intersection_threshold: 0.9
+
+  use_augmentations: False
+  aug_prob: 0.4 # probability of augmentations
 
 model:
   lr: 0.0001
@@ -59,5 +56,17 @@ model:
 
 logger:
   wandb:
-    name: ${name}
-    tags: ["exact", "vicreg"]
+    name: ${name} #_srs${datamodule.resample_train_val_seed}_split${datamodule.train_val_ratio}
+    tags: ['exact", "vicreg", "var_loss", "multicenter"]
+    entity: mahdigilany
+    project: multicenter
+
+# comment all these when using needle region only
+callbacks:
+  model_checkpoint:
+    monitor: "val/ssl/var_loss"
+    mode: "min"
+
+  early_stopping:
+    monitor: "val/ssl/var_loss"
+    mode: "min"

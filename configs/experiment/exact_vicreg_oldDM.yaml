@@ -6,15 +6,15 @@
 defaults:
   - override /trainer: exact_trainer.yaml
   - override /datamodule: exact_datamodule_oldDM.yaml
-  - override /model: exact_module.yaml
-  - override /callbacks: exact_callbacks.yaml
+  - override /model: exact_ssl_module.yaml
+  - override /callbacks: exact_callbacks_ssl.yaml
   - override /logger: wandb
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "aug-horiz-vert-affine"
+name: "vicreg_online-eval_augpr.4-intes"
 
 seed: 12345
 
@@ -31,20 +31,33 @@ datamodule:
   train_val_split: 0.25 # ratio of train to val dataset length
   split_randomstate: 26 # random state for above random split
   dataset_hyp: # dataset hyperparameters
+    SSL: True
     patch_sz: 5 # patch size in mm
     jump_sz: 1 # jump of each patch to create next patch
     inv_cutoff: 0.4 # cutoff involvement to exclude low inv data in train/test/val
     # list of applied augmentations ['RandomInvert', 'RandomVerticalFlip', 'RandomHorizontalFlip', 'RandomAffine', 'RandomErasing', 'RandomEqualize']
-    aug_list: ['RandomVerticalFlip', 'RandomHorizontalFlip', 'RandomAffine']
-    aug_prob: 0.2 # probability of augmentations
+    aug_list:
+      [
+#        "RandomInvert",
+        "RandomVerticalFlip",
+        "RandomHorizontalFlip",
+        "RandomAffine",
+        "RandomErasing",
+      ]
+    aug_prob: 0.4 # probability of augmentations
 
 model:
   lr: 0.0001
-  batch_size: ${datamodule.batch_size}
-  net:
-    layers: [1, 1, 1, 1] # number of conv layers in each residual block
+  backbone: resnet10
+  # method specific parameters
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+  proj_output_dim: 512
+  proj_hidden_dim: 512
+  sim_loss_weight: 25.
+  var_loss_weight: 25.
+  cov_loss_weight: 1.
 
 logger:
   wandb:
-    name: ${name}_inv-cut${datamodule.dataset_hyp.inv_cutoff}_srs${datamodule.split_randomstate}_split${datamodule.train_val_split}
-    tags: ["exact", "test", "${name}"]
+    name: ${name}
+    tags: ["exact", "vicreg"]

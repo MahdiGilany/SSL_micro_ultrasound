@@ -5,7 +5,7 @@
 
 defaults:
   - override /trainer: exact_trainer.yaml
-  - override /datamodule: exact_datamodule_UVA600.yaml
+  - override /datamodule: exact_datamodule.yaml
   - override /model: finetuner_module.yaml
   - override /callbacks: finetuner_callbacks.yaml
   - override /logger: wandb
