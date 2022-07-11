@@ -3,11 +3,11 @@ from exactvu.data.datamodule import ExactSSLDataModule
 # from exactvu.data.datamodules import MICCAI2022DataModule
 
 
-class ExactDataModuleUVA(ExactSSLDataModule):
+class ExactDataModule(ExactSSLDataModule):
 
     def val_dataloader(self):
-        val_loader = super(ExactDataModuleUVA, self).val_dataloader()
-        test_asval_loader = super(ExactDataModuleUVA, self).test_dataloader()
+        val_loader = super(ExactDataModule, self).val_dataloader()
+        test_asval_loader = super(ExactDataModule, self).test_dataloader()
 
         val_loader = val_loader if isinstance(val_loader.dataset, list) else [val_loader]
         test_asval_loader = test_asval_loader if isinstance(test_asval_loader, list) else [test_asval_loader]
