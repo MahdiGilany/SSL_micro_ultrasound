@@ -52,18 +52,9 @@ class ExactFineTuner(SSLFineTuner):
             warn(
                 "You are using the finetuner model with no loadable checkpoint. The model will be randomly initialized."
             )
-            assert semi_sup==True, "checkpoint is not used. Semi-supervised mode must be True"
+            assert semi_sup==True, "checkpoint for loading weights is not determined." \
+                                   "If you want to train in supervised fashion, then semi-supervised mode must be True"
 
-        # # for memorizing all logits
-        # self.all_val_online_logits = []
-        # self.all_test_online_logits = []
-
-        # # metrics for logging
-        # metrics = MetricCollection({
-        #         # 'finetune_acc': Accuracy(num_classes=self.num_classes, multiclass=True),
-        #         "finetune_acc_macro": Accuracy(num_classes=self.num_classes, average="macro", multiclass=True),
-        #         # 'finetune_auc': AUROC(num_classes=self.num_classes),
-        #     })
         self.train_acc = Accuracy()
         self.inferred_no_centers = 1
 
