@@ -1,6 +1,6 @@
 # @package _global_
 
-name: baseline_augs
+name: bl_augs_bsz64
 
 datamodule: 
   self_supervised:
