@@ -30,6 +30,7 @@ rich_progress_bar:
 
 online_evaluatorssl: # ssl online evaluator
   _target_: src.callbacks.online_evaluatorssl.ExactOnlineEval
+  dataset: exact
   z_dim: 512 # todo: it just works for resnet10 or resnets in general not other networks (does not change automatically)
   num_classes: 2
   drop_p: 0.0
