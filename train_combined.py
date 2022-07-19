@@ -21,8 +21,11 @@ def main(config: DictConfig):
     import wandb
 
     wandb.init(
-        config=OmegaConf.to_container(config, resolve=True, throw_on_missing=True)
+        config=OmegaConf.to_container(config, resolve=True, throw_on_missing=True),
+        name=config.name,
+        project=config.project,
     )
+    config = wandb.config
 
     # Train model
     return train(config)

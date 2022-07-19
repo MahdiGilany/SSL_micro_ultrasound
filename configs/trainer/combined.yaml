@@ -3,6 +3,7 @@ pretrain:
   _target_: pytorch_lightning.Trainer
 
   gpus: 1
+  devices: [0]
 
   min_epochs: 100
   max_epochs: 200
@@ -23,9 +24,10 @@ finetune:
   _target_: pytorch_lightning.Trainer
 
   gpus: 1
+  devices: [0]
 
   min_epochs: null
-  max_epochs: 100
+  max_epochs: 50
 
   limit_train_batches: null
 

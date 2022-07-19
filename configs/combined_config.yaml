@@ -54,6 +54,7 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "default"
+name: null
+project: exact-vicreg
 
 save_feature_extractor_to_wandb: True

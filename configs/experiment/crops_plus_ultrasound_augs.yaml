@@ -1,0 +1,28 @@
+# @package _global_
+
+name: crops_us_augs_bsz_64
+
+datamodule: 
+  self_supervised: 
+    random_phase_shift: True
+    random_phase_distort: False
+    random_phase_distort_strength: 0.1
+    random_phase_distort_freq_limit: 0.3
+    random_envelope_distort: True
+    random_envelope_distort_strength: 0.5
+    random_envelope_distort_freq_limit: 0.1
+    random_bandstop: False
+    random_bandstop_width: 0.1
+    random_freq_stretch: False
+    random_freq_stretch_range:  0.98
+    use_augmentations:  False
+    aug_prob:  0.5
+    random_erasing:  False
+    random_horizontal_flip:  True
+    random_invert:  True
+    random_vertical_flip:  False
+    random_affine_translation:  0.
+    random_affine_rotation:  0
+    random_affine_shear:  [0, 0, 0, 0]
+    random_resized_crop:  True
+    random_resized_crop_scale:  0.5

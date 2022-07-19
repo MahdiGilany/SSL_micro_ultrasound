@@ -10,13 +10,14 @@ from pytorch_lightning import (
     seed_everything,
 )
 from pytorch_lightning.loggers import LightningLoggerBase
+import torch
 
 from src import utils
 
 log = utils.get_logger(__name__)
 
 
-def train(config) -> Optional[float]:
+def train(config: dict) -> Optional[float]:
     """Contains the training pipeline. Can additionally evaluate model on a testset, using best
     weights achieved during training.
 
@@ -33,40 +34,45 @@ def train(config) -> Optional[float]:
 
     # Set seed for random number generators in pytorch, numpy and python.random
     if config.get("pretrain_seed"):
-        seed_everything(config.seed, workers=True)
+        seed_everything(config["seed"], workers=True)
 
     # Init lightning datamodule
     log.info(
-        f"Instantiating self-supervised datamodule <{config.datamodule['self_supervised']['_target_']}>"
+        f"Instantiating self-supervised datamodule <{config['datamodule']['self_supervised']['_target_']}>"
     )
     datamodule: LightningDataModule = hydra.utils.instantiate(
-        config.datamodule.self_supervised
+        config["datamodule"]["self_supervised"]
     )
 
     # Init lightning model
-    log.info(f"Instantiating model <{config.model.pretrain._target_}>")
-    model: LightningModule = hydra.utils.instantiate(config.model.pretrain)
+    log.info(f"Instantiating model <{config['model']['pretrain']['_target_']}>")
+    model: LightningModule = hydra.utils.instantiate(config["model"]["pretrain"])
 
     # Init lightning callbacks
     callbacks: List[Callback] = []
     if "callbacks" in config:
-        for _, cb_conf in config.callbacks.pretrain.items():
+        for _, cb_conf in config["callbacks"]["pretrain"].items():
             if "_target_" in cb_conf:
-                log.info(f"Instantiating pretraining callback <{cb_conf._target_}>")
+                log.info(f"Instantiating pretraining callback <{cb_conf['_target_']}>")
                 callbacks.append(hydra.utils.instantiate(cb_conf))
 
     # Init lightning loggers
     logger: List[LightningLoggerBase] = []
     if "logger" in config:
-        for _, lg_conf in config.logger.items():
+        for _, lg_conf in config["logger"].items():
             if "_target_" in lg_conf:
-                log.info(f"Instantiating logger <{lg_conf._target_}>")
+                log.info(f"Instantiating logger <{lg_conf['_target_']}>")
                 logger.append(hydra.utils.instantiate(lg_conf))
 
     # Init lightning trainer
-    log.info(f"Instantiating pretraining trainer <{config.trainer.pretrain._target_}>")
+    log.info(
+        f"Instantiating pretraining trainer <{config['trainer']['pretrain']['_target_']}>"
+    )
     trainer: Trainer = hydra.utils.instantiate(
-        config.trainer.pretrain, callbacks=callbacks, logger=logger, _convert_="partial"
+        config["trainer"]["pretrain"],
+        callbacks=callbacks,
+        logger=logger,
+        _convert_="partial",
     )
 
     # Send some parameters from config to all lightning loggers
@@ -126,44 +132,55 @@ def train(config) -> Optional[float]:
         transform.create_pairs = False
         import pickle
 
-        with open("feature_extractor.pkl", "wb") as f:
-            pickle.dump(feature_extractor, f)
+        sample_batch = next(iter(datamodule.val_dataloader()[0]))
+        X1, y = sample_batch
+        sample_input = X1
+
+        feature_extractor.eval()
+        traced_model = torch.jit.trace(feature_extractor, (sample_input))
+        torch.jit.save(traced_model, "feature_extractor.pt")
+
         with open("transform.pkl", "wb") as f:
             pickle.dump(transform, f)
 
-        artifact.add_file("feature_extractor.pkl")
+        artifact.add_file("feature_extractor.pt")
         artifact.add_file("transform.pkl")
 
         run.log_artifact(artifact)
 
-    # FINETUNING ====================================
+    # == FINETUNING ====================================
 
     # Init lightning datamodule
     log.info(
-        f"Instantiating supervised datamodule <{config.datamodule.self_supervised._target_}>"
+        f"Instantiating supervised datamodule <{config['datamodule']['self_supervised']['_target_']}>"
     )
     datamodule: LightningDataModule = hydra.utils.instantiate(
-        config.datamodule.supervised
+        config["datamodule"]["supervised"]
     )
 
     # Init lightning model
-    log.info(f"Instantiating model <{config.model.finetune._target_}>")
+    log.info(f"Instantiating model <{config['model']['finetune']['_target_']}>")
     model: LightningModule = hydra.utils.instantiate(
-        config.model.finetune, ckpt_path=ckpt_path
+        config["model"]["finetune"], ckpt_path=ckpt_path
     )
 
     # Init lightning callbacks
     callbacks: List[Callback] = []
     if "callbacks" in config:
-        for _, cb_conf in config.callbacks.finetune.items():
+        for _, cb_conf in config["callbacks"]["finetune"].items():
             if "_target_" in cb_conf:
-                log.info(f"Instantiating pretraining callback <{cb_conf._target_}>")
+                log.info(f"Instantiating pretraining callback <{cb_conf['_target_']}>")
                 callbacks.append(hydra.utils.instantiate(cb_conf))
 
     # Init lightning trainer
-    log.info(f"Instantiating pretraining trainer <{config.trainer.finetune._target_}>")
+    log.info(
+        f"Instantiating pretraining trainer <{config['trainer']['finetune']['_target_']}>"
+    )
     trainer: Trainer = hydra.utils.instantiate(
-        config.trainer.finetune, callbacks=callbacks, logger=logger, _convert_="partial"
+        config["trainer"]["finetune"],
+        callbacks=callbacks,
+        logger=logger,
+        _convert_="partial",
     )
 
     # Train the model
@@ -183,7 +200,7 @@ def train(config) -> Optional[float]:
     )
 
     # Print path to best checkpoint
-    if not config.trainer.get("fast_dev_run") and config.get("finetune"):
+    if not config["trainer"].get("fast_dev_run") and config.get("finetune"):
 
         assert trainer.checkpoint_callback is not None
 
