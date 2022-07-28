@@ -9,6 +9,7 @@ mode: "self-supervised"
 needle_region_only: True
 prostate_region_only: True
 minimum_involvement: 0.4
+return_metadata: True
 
 # multi-center
 cohort_specifier: "UVA600"
