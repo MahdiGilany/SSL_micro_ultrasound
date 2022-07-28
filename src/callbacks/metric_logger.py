@@ -142,7 +142,8 @@ class MetricLogger(Callback):
         if not trainer.sanity_checking:
             best_epoch = self.find_best_epoch()
             self.patch_metric_manager.log_optimum(pl_module, best_epoch)
-            self.core_metric_manager.log_optimum(pl_module, best_epoch)
+            if self.corewise_metrics:
+                self.core_metric_manager.log_optimum(pl_module, best_epoch)
 
     def log_core_scatter(self, trainer, pl_module):
         val_core_probs = []
