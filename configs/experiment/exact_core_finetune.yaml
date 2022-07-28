@@ -1,0 +1,69 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /trainer: exact_trainer.yaml
+  - override /datamodule: exact_core_datamodule.yaml
+  - override /model: core_finetuner_module.yaml
+  - override /callbacks: finetuner_callbacks.yaml
+  - override /logger: wandb
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+name: "cor-fintun_prstRgn_preTrnUVA600"
+
+seed: 12345
+
+trainer:
+  min_epochs: 100
+  max_epochs: 100
+  gradient_clip_val: null
+  limit_train_batches: null
+  limit_val_batches: null
+
+datamodule:
+  batch_size: 5
+  num_workers: 4
+  patch_view_config:
+    patch_size: [ 5, 5 ]
+    patch_strides: [ 1,1 ]
+    needle_region_only: True
+    prostate_region_only: True
+    prostate_intersection_threshold: 0.9
+    needle_intersection_threshold: 0.6
+  splits_config:
+    cohort_specifier: "UVA600"
+    split_seed: 26
+    train_val_ratio: 0.25
+    balance_classes: True
+    benign_cores_selection_seed: 0
+  minimum_involvement: 0.4
+#  use_augmentations: False
+#  aug_prob: 0.4 # probability of augmentations
+
+model:
+  backbone:
+    backbone: resnet10
+  ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_prstRgn_strd3/2022-06-17_21-03-13/checkpoints/epoch_189.ckpt #26
+#  ckpt_path: ${original_work_dir}/logs/experiments/multiruns/vicreg_UVA600_prstRgn_strd3/2022-06-18_17-45-02/checkpoints/epoch_195_13.ckpt #13
+  dropout: 0.0
+  semi_sup: False
+  learning_rate: 0.0001
+
+logger:
+  wandb:
+    name: ${name}
+    tags: ["exact", "core_finetune", "multicenter",]
+    entity: mahdigilany
+    project: multicenter
+
+callbacks:
+  metric_logger:
+    corewise_metrics: False
+
+  early_stopping:
+    monitor: "val/finetune_auc" # name of the logged metric which determines when model is improving
