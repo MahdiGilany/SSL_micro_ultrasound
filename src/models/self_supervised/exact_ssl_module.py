@@ -55,6 +55,7 @@ class ExactSSLModule(LightningModule):
         "resnet10_feat_dim_64": resnet10_feat_dim_64,
         "resnet10_compressed_to_ndim": resnet10_compressed_to_ndim,
         "resnet10_tiny_compressed_to_3dim": resnet10_tiny_compressed_to_3dim,
+        "resnet10_compressed_to_64dim": resnet10_compressed_to_64dim,
     }
 
     # Models in this list should have fc as the last layer, which will be removed.
@@ -70,13 +71,13 @@ class ExactSSLModule(LightningModule):
     ]
 
     def __init__(
-            self,
-            backbone: str,
-            lr: float = 0.0001,
-            weight_decay: float = 0.000,
-            optim_algo: Literal["Adam", "Novograd"] = "Adam",
-            epoch: int = 100,
-            batch_size: int = 32,
+        self,
+        backbone: str,
+        lr: float = 0.0001,
+        weight_decay: float = 0.000,
+        optim_algo: Literal["Adam", "Novograd"] = "Adam",
+        epoch: int = 100,
+        batch_size: int = 32,
     ):
         super().__init__()
 
@@ -333,10 +334,10 @@ class ExactSSLModule(LightningModule):
 
     def set_optim_algo(self, **kwargs):
         optim_algo = {
-            'SGD': torch.optim.SGD,
-            'Adam': torch.optim.Adam,
-            'AdamW': torch.optim.AdamW,
-            'Novograd': torch_optimizer.NovoGrad
+            "SGD": torch.optim.SGD,
+            "Adam": torch.optim.Adam,
+            "AdamW": torch.optim.AdamW,
+            "Novograd": torch_optimizer.NovoGrad,
         }
 
         if self.optim_algo not in optim_algo.keys():
