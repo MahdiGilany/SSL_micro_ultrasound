@@ -21,6 +21,7 @@ from src.models.components.resnets import resnet50 as _create_resnet50
 
 from src.models.components.attention import MultiheadAttention
 
+
 @register_model
 def swin_tiny(window_size=7, **kwargs):
     model_kwargs = dict(
@@ -777,11 +778,32 @@ def resnet10_tiny_compressed_to_3dim():
 
 @register_model
 def resnet10_compressed_to_ndim(**kwargs):
-    n=128
+    n = 128
     model = resnet10(**kwargs)
     model.fc = torch.nn.Identity()
     model = torch.nn.Sequential(
-        model, torch.nn.Linear(512, 128), torch.nn.ReLU(), torch.nn.Linear(128, n), torch.nn.ReLU()
+        model,
+        torch.nn.Linear(512, 128),
+        torch.nn.ReLU(),
+        torch.nn.Linear(128, n),
+        torch.nn.ReLU(),
+    )
+    model.num_features = n
+
+    return model
+
+
+@register_model
+def resnet10_compressed_to_64dim():
+    n = 64
+    model = resnet10()
+    model.fc = torch.nn.Identity()
+    model = torch.nn.Sequential(
+        model,
+        torch.nn.Linear(512, 128),
+        torch.nn.ReLU(),
+        torch.nn.Linear(128, n),
+        torch.nn.ReLU(),
     )
     model.num_features = n
 
@@ -793,7 +815,9 @@ def attention_classifier(input_dim, num_classes):
     qk_dim = 64
     v_dim = 128
     num_heads = 5
-    attention_model = MultiheadAttention(input_dim, qk_dim, v_dim, num_heads, num_classes)
+    attention_model = MultiheadAttention(
+        input_dim, qk_dim, v_dim, num_heads, num_classes
+    )
 
     # model = torch.nn.Sequential(
     #     attention_model,
