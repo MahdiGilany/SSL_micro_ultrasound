@@ -1,6 +1,6 @@
 # @package _global_
 
-name: crops_us_augs_bsz_64
+name: UVA_pl_CRC_crops_plus_us_augs_TEST0
 
 datamodule: 
   self_supervised: 
@@ -26,3 +26,5 @@ datamodule:
     random_affine_shear:  [0, 0, 0, 0]
     random_resized_crop:  True
     random_resized_crop_scale:  0.5
+
+    patch_stride_mm: [3, 3]

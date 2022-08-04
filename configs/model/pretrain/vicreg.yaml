@@ -1,0 +1,15 @@
+_target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+
+lr: 0.0001
+backbone: resnet10_compressed_to_64dim
+weight_decay: 0.0001
+epoch: ${trainer.pretrain.max_epochs}
+batch_size: ${datamodule.self_supervised.batch_size}
+
+# method specific parameters
+
+proj_output_dim: 512
+proj_hidden_dim: 512
+sim_loss_weight: 25.
+var_loss_weight: 25.
+cov_loss_weight: 1.
