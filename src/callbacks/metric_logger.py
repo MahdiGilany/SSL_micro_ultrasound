@@ -107,7 +107,7 @@ class MetricLogger(Callback):
             # test
             self.patch_metric_manager.update(
                 "test",
-                self.cohort_specifier[int(dataloader_idx/2.)-1],
+                self.cohort_specifier[dataloader_idx - len(self.cohort_specifier)],
                 logits_cur_center.softmax(-1),
                 labels_cur_center,
                 gs_cur_center
