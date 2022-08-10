@@ -57,7 +57,7 @@ class MultiheadAttention(nn.Module):
             torch.nn.Linear(self.v_dim * num_heads, v_dim),
             torch.nn.ReLU(),
             torch.nn.Linear(v_dim, num_classes),
-            torch.nn.Softmax(dim=1)
+            # torch.nn.Softmax(dim=1)
         )
         # self._reset_parameters()
 
@@ -110,3 +110,50 @@ class MultiheadAttention(nn.Module):
             return torch.stack(outputs, dim=0), torch.stack(attentions, dim=0)
         else:
             return torch.stack(outputs, dim=0)
+
+
+# This module is copied from code of "Attention-based Deep Multiple Instance Learning"
+class AttentionMIL(nn.Module):
+    def __init__(self, input_dim, num_classes):
+        super(AttentionMIL, self).__init__()
+        self.L = input_dim
+        self.num_classes = num_classes
+        self.D = 128
+        self.K = 1
+
+        self.attention = nn.Sequential(
+            nn.Linear(self.L, self.D),
+            nn.Tanh(),
+            nn.Linear(self.D, self.K)
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Linear(self.L*self.K, self.num_classes),
+        )
+
+    def _forward_impl(self, x):
+        x = x.squeeze(0)
+
+        H = x # NxL
+
+        A = self.attention(H)  # NxK
+        A = torch.transpose(A, 1, 0)  # KxN
+        A = F.softmax(A, dim=1)  # softmax over N
+
+        M = torch.mm(A, H)  # KxL
+
+        Y_prob = self.classifier(M)
+        # Y_hat = torch.ge(Y_prob, 0.5).float()
+
+        return Y_prob#, Y_hat, A
+
+    def forward(self, x: Tensor, corelen, *args):
+        corelen_start = corelen
+        corelen_end = np.append(corelen[1:].detach().cpu(), None)
+
+        outputs = []
+        for i, j in zip(corelen_start, corelen_end):
+            attn_outs = self._forward_impl(x[None, i:j, ...])
+            outputs.append(attn_outs)
+
+        return torch.cat(outputs, dim=0)
