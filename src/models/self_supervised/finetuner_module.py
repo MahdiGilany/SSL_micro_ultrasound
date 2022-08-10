@@ -73,10 +73,10 @@ class ExactFineTuner(SSLFineTuner):
         x, y, *metadata = batch
 
         if self.semi_sup:
-            feats = self.backbone(x)["feats"]
+            feats = self.backbone(x, proj=False)["feats"]
         else:
             with torch.no_grad():
-                feats = self.backbone(x)["feats"]
+                feats = self.backbone(x, proj=False)["feats"]
 
         feats = feats.view(feats.size(0), -1)
         logits = self.linear_layer(feats)
@@ -211,6 +211,8 @@ class ExactCoreFineTuner(pl.LightningModule):
     """
     _SUPPORTED_HEADS = {
         "attention_classifier": attention_classifier,
+        "attention_MIL": attention_MIL,
+        "simple_aggregation": linear_aggregation,
     }
 
     def __init__(
@@ -291,15 +293,15 @@ class ExactCoreFineTuner(pl.LightningModule):
         for i in range(0, x.shape[0], virtual_batch):
             xi = x[i:i + virtual_batch, ...]
             if self.semi_sup:
-                feat = self.backbone(xi)["feats"]
+                feat = self.backbone(xi, proj=False)["feats"]
             else:
                 with torch.no_grad():
-                    feat = self.backbone(xi)["feats"]
+                    feat = self.backbone(xi, proj=False)["feats"]
             feats = torch.cat((feats, feat), 0)
 
         feats = feats.view(feats.size(0), -1)
         logits = self.head_network(feats, core_len_cumsum)
-        y = torch.tensor([int(grade !=  'Benign') for grade in metadata[0]["grade"]], device=x.device)
+        y = torch.tensor([int(grade != 'Benign') for grade in metadata[0]["grade"]], device=x.device)
         loss = F.cross_entropy(logits, y)
 
         return loss, logits, y, *metadata
