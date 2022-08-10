@@ -19,7 +19,8 @@ from src.models.components.resnets import resnet10 as _create_resnet10
 from src.models.components.resnets import resnet18 as _create_resnet18
 from src.models.components.resnets import resnet50 as _create_resnet50
 
-from src.models.components.attention import MultiheadAttention
+from src.models.components.attention import MultiheadAttention, AttentionMIL
+from src.models.components.simple_dense_net import SimpleAggregNet
 
 
 @register_model
@@ -827,3 +828,13 @@ def attention_classifier(input_dim, num_classes):
     attention_model.out_dim = v_dim * num_heads
 
     return attention_model
+
+@register_model
+def attention_MIL(input_dim, num_classes):
+    attentionMIL_model = AttentionMIL(input_dim, num_classes)
+    return attentionMIL_model
+
+@register_model
+def linear_aggregation(input_dim, num_classes):
+    dense_model = SimpleAggregNet(input_dim=input_dim, num_classes=num_classes)
+    return dense_model
