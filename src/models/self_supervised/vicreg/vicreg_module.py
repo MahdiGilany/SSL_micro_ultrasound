@@ -70,7 +70,7 @@ class VICReg(ExactSSLModule):
         extra_learnable_params = [{"params": self.projector.parameters()}]
         return super().learnable_params + extra_learnable_params
 
-    def forward(self, X: torch.Tensor) -> Dict[str, Any]:
+    def forward(self, X: torch.Tensor, proj=True) -> Dict[str, Any]:
         """Performs the forward pass of the backbone and the projector.
 
         Args:
@@ -85,9 +85,9 @@ class VICReg(ExactSSLModule):
         # # for applications that need feature vector only
         # if not self.training:
         #     return out
-
-        z = self.projector(out["feats"])
-        out.update({"z": z})
+        if proj:
+            z = self.projector(out["feats"])
+            out.update({"z": z})
         return out
 
     def training_step(self, batch: Sequence[Any], batch_idx: int) -> torch.Tensor:
