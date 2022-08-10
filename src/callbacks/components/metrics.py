@@ -95,7 +95,7 @@ class GleasonMetric():
     def log(self, logger):
         metric_dict = self.compute()
         if metric_dict == "empty":
-            self.metric_over_epochs.append(None)
+            self.metric_over_epochs.append({})
             return
 
         self.metric_over_epochs.append(metric_dict)
