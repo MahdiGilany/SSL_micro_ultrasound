@@ -39,6 +39,6 @@ metric_logger:
   _target_: src.callbacks.metric_logger.MetricLogger
   mode: "finetune"
   num_classes: 2
-  corewise_metrics: False
+  corewise_metrics: True
   corewise_inv_threshold: 0.5
 
