@@ -1,0 +1,20 @@
+project: exact-vicreg
+entity: ssl-exact-team
+name: batch_size_sweep
+
+program: train_combined.py
+
+method: bayes
+metric:
+  goal: maximize
+  name: val/finetune_auc_best
+
+parameters: 
+  datamodule.self_supervised.batch_size: 
+    values: [16, 32, 64, 128]
+
+command:
+- ${env}
+- python
+- ${program}
+- ${args_no_hyphens}

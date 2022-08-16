@@ -9,7 +9,7 @@ defaults:
   - logger: wandb # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: combined.yaml
   - augmentations: baseline_augs.yaml
-  
+
   # experiment configs allow for version control of specific configurations
   # e.g. best hyperparameters for each combination of model and datamodule
   - experiment: null
@@ -58,5 +58,5 @@ seed: null
 name: null
 project: exact-vicreg
 
-pretrain_monitored_metric: val/ssl/simclr_loss
+pretrain_monitored_metric: val/ssl/var_loss
 save_feature_extractor_to_wandb: True

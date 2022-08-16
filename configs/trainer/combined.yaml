@@ -5,8 +5,8 @@ pretrain:
   gpus: 1
   devices: [0]
 
-  min_epochs: 100
-  max_epochs: 200
+  min_epochs: 200
+  max_epochs: ${.min_epochs}
 
   limit_train_batches: null
 

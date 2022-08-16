@@ -1,0 +1,15 @@
+# @package _global_
+
+trainer:
+  pretrain: 
+    fast_dev_run: True 
+
+  finetune: 
+    fast_dev_run: True 
+
+name: debug  
+project: exact_vicreg_debug
+
+model: 
+  finetune: 
+    semi_sup: True

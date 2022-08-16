@@ -1,0 +1,18 @@
+# @package _global_
+
+trainer: 
+  pretrain: 
+    max_epochs: 1
+    limit_train_batches: 10
+    limit_val_batches: 10
+  finetune: 
+    max_epochs: 1
+    limit_train_batches: 10
+    limit_val_batches: 10
+
+save_feature_extractor_to_wandb: False
+name: debug  
+project: exact_vicreg_debug
+
+logger: 
+  project: exact_ssl_debug

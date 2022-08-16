@@ -10,10 +10,6 @@ metric:
   name: val/finetune_auc_best
 
 parameters: 
-  model.pretrain.lr: 
-    distribution: log_uniform 
-    min: -10
-    max: -2
   model.pretrain.sim_loss_weight: 
     distribution: uniform
     min: 0.1

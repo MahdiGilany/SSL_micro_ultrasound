@@ -1,7 +1,7 @@
 _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
 
 lr: 0.0001
-backbone: resnet10_compressed_to_64dim
+backbone: resnet10
 weight_decay: 0.0001
 epoch: ${trainer.pretrain.max_epochs}
 batch_size: ${datamodule.self_supervised.batch_size}

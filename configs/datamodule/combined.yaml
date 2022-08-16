@@ -6,8 +6,11 @@ self_supervised:
   #data_directory: ${data_dir}/Exact/ # data_dir is specified in config.yaml
   # comment for later: C:\Users\Mahdi\Desktop\Shared_folder\OneDrive_Queens_University\Project_codes\SSLmicroUltrasound\data\Exact\
   cohort_specifier: UVA600
-  batch_size: 64
-  num_workers: 16
+  val_centers: all
+  test_centers: all
+  truncate_train_data: null
+  batch_size: 256
+  num_workers: 20
   mode: "self-supervised"
   needle_region_only: False
   prostate_region_only: True
@@ -57,12 +60,12 @@ supervised:
 
   _target_: src.datamodules.exact_datamodule.ExactDataModule
 
-  cohort_specifier: [UVA600,]
+  cohort_specifier: [UVA600, CRCEO, JH, PMCC, PCC]
   batch_size: 32
   num_workers: 8
   mode: "supervised"
   needle_region_only: True
-  prostate_region_only: True
+  prostate_region_only: False
   minimum_involvement: 0.4
   return_metadata: True
 

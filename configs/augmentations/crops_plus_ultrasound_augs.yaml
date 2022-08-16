@@ -24,5 +24,3 @@ datamodule:
     random_affine_shear:  [0, 0, 0, 0]
     random_resized_crop:  True
     random_resized_crop_scale:  0.5
-
-    patch_stride_mm: [3, 3]

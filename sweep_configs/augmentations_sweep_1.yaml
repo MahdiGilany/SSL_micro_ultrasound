@@ -1,0 +1,64 @@
+project: exact-vicreg
+entity: ssl-exact-team
+name: augmentations_sweep
+
+program: train_combined.py
+
+method: bayes
+metric:
+  goal: maximize
+  name: val/finetune_auc_best
+
+parameters: 
+  datamodule.self_supervised.random_phase_shift: 
+    values: [True, False]
+  datamodule.self_supervised.random_phase_distort: 
+    values: [True]
+  datamodule.self_supervised.random_phase_distort_strength: 
+    distribution: uniform 
+    min: 0
+    max: 0.8
+  datamodule.self_supervised.random_phase_distort_freq_limit: 
+    distribution: uniform 
+    min: 0.2
+    max: 0.8
+  datamodule.self_supervised.random_envelope_distort:
+    values: [True] 
+  datamodule.self_supervised.random_envelope_distort_strength: 
+    distribution: uniform 
+    min: 0
+    max: 0.8
+  datamodule.self_supervised.random_envelope_distort_freq_limit: 
+    distribution: uniform 
+    min: 0.2
+    max: 0.8
+  datamodule.self_supervised.random_freq_stretch: 
+    values: [True, False]
+  datamodule.self_supervised.random_erasing:
+    values: [True, False] 
+  datamodule.self_supervised.random_invert: 
+    values: [True, False]
+  datamodule.self_supervised.random_horizontal_flip: 
+    values: [True, False]
+  datamodule.self_supervised.random_vertical_flip: 
+    values: [True, False]
+  datamodule.self_supervised.random_affine_translation: 
+    distribution: uniform 
+    min: 0.
+    max: 0.3
+  datamodule.self_supervised.random_affine_rotation: 
+    distribution: uniform 
+    min: 0. 
+    max: 20
+  datamodule.self_supervised.random_resized_crop: 
+    values: [True]
+  datamodule.self_supervised.random_resized_crop_scale: 
+    distribution: uniform 
+    min: 0.08
+    max: 1.
+
+command:
+- ${env}
+- python
+- ${program}
+- ${args_no_hyphens}
