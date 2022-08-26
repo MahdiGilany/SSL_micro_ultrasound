@@ -1,0 +1,40 @@
+
+
+_target_: src.datamodules.exact_datamodule.ExactDataModule
+
+cohort_specifier: [UVA600]
+batch_size: 32
+num_workers: 16
+mode: "supervised"
+needle_region_only: True
+prostate_region_only: True
+minimum_involvement: 0.4
+return_metadata: True
+
+resample_train_val: True
+resample_train_val_seed: 26
+train_val_ratio: 0.25
+needle_region_intersection_threshold: 0.6
+prostate_region_intersection_threshold: 0.9
+
+use_augmentations: False
+aug_prob: 0.4 # probability of augmentations
+
+random_erasing: True
+random_invert: False
+random_horizontal_flip: True
+random_vertical_flip: True
+random_affine_translation: [0.2, 0.2]
+random_affine_rotation: 0
+random_affine_shear: [0, 0, 0, 0]
+random_resized_crop: False
+random_resized_crop_scale: [0.7, 1]
+
+balance_classes_train: True
+normalize_mode: instance
+normalize_type: min-max
+normalize_truncate: True
+
+patch_size_mm: [5, 5]
+patch_stride_mm: [1, 1]
+patch_size_pixels: [256, 256]

@@ -11,13 +11,14 @@ from pytorch_lightning import (
 )
 from pytorch_lightning.loggers import LightningLoggerBase
 import torch
+from omegaconf import DictConfig, OmegaConf
 
 from src import utils
 
 log = utils.get_logger(__name__)
 
 
-def train(config: dict) -> Optional[float]:
+def train(config: DictConfig) -> Optional[float]:
     """Contains the training pipeline. Can additionally evaluate model on a testset, using best
     weights achieved during training.
 
@@ -63,6 +64,13 @@ def train(config: dict) -> Optional[float]:
             if "_target_" in lg_conf:
                 log.info(f"Instantiating logger <{lg_conf['_target_']}>")
                 logger.append(hydra.utils.instantiate(lg_conf))
+
+        if "wandb" in config.logger:
+            import wandb
+
+            wandb.config = OmegaConf.to_container(
+                config, resolve=True, throw_on_missing=True
+            )
 
     # Init lightning trainer
     log.info(

@@ -13,4 +13,4 @@ wandb:
   job_type: "train"
   group: ""
   tags: []
-  entity: exact-ssl-team
+  
