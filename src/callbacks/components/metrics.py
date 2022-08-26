@@ -157,7 +157,7 @@ class GleasonMetric:
     def log_optimum(self, logger, ep_number):
         opt_metric = self.metric_over_epochs[ep_number]
         for i, key in enumerate(opt_metric.keys()):
-            if "auc" in key or "acc" in key:
+            if "auc" in key or "acc" in key or "ap" in key:
                 logger.log(key + "_best", opt_metric[key], **self.kwargs)
 
     def reset(self, reset_tracker=False):
