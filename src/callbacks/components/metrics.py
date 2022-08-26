@@ -136,10 +136,6 @@ class GleasonMetric:
         _logits = torch.cat(self.logits)
         if _logits.shape[0] == 0:
             return "empty"
-
-        print(_logits.shape)
-        print(self.GS_name)
-
         return self.metric_collection(_logits, _labels)
 
     def log(self, logger):
