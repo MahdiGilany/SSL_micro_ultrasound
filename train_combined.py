@@ -7,7 +7,9 @@ from omegaconf import DictConfig, OmegaConf
 dotenv.load_dotenv(override=False)
 
 
-@hydra.main(config_path="configs/", config_name="combined_config.yaml")
+@hydra.main(
+    config_path="configs/", config_name="combined_config.yaml", version_base="1.2"
+)
 def main(config: DictConfig):
 
     # Imports can be nested inside @hydra.main to optimize tab completion
@@ -18,14 +20,13 @@ def main(config: DictConfig):
     # Applies optional utilities
     utils.extras(config)
 
-    import wandb
-
-    wandb.init(
-        config=OmegaConf.to_container(config, resolve=True, throw_on_missing=True),
-        name=config.name,
-        project=config.project,
-    )
-    config = wandb.config
+    # if not config.get('disable_logging'):
+    #    import wandb
+    #    wandb.init(
+    #        config=OmegaConf.to_container(config, resolve=True, throw_on_missing=True),
+    #        name=config.name,
+    #        project=config.project,
+    #    )
 
     # Train model
     return train(config)
