@@ -1,0 +1,11 @@
+
+_target_: src.models.self_supervised.byol.BYOL
+
+lr: 0.0001
+backbone: resnet10
+weight_decay: 0.0001
+epoch: ${trainer.pretrain.max_epochs}
+batch_size: ${datamodule.self_supervised.batch_size}
+
+proj_hidden_dim: 128
+proj_output_dim: 64

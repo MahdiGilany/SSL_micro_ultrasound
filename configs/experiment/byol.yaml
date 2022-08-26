@@ -1,0 +1,10 @@
+
+# @package _global_
+
+defaults: 
+  - override /model/pretrain: byol
+  - override /datamodule/augmentations: crops_plus_ultrasound_augs
+
+name: byol_bsz${datamodule.self_supervised.batch_size}
+pretrain_monitored_metric: val/ssl/regression_mse_loss
+

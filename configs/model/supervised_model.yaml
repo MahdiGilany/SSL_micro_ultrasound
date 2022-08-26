@@ -1,0 +1,10 @@
+_target_: src.models.supervised.supervised_model.SupervisedModel
+
+backbone: resnet10
+batch_size: ${datamodule.batch_size}
+epochs: 200
+learning_rate: 1e-4 
+scheduler_type: "warmup_cosine"
+optim_algo: "Novograd"
+final_lr: 0.0
+weight_decay: 1e-6

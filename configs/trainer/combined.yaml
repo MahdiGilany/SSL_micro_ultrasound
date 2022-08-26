@@ -2,8 +2,8 @@ pretrain:
 
   _target_: pytorch_lightning.Trainer
 
-  gpus: 1
-  devices: [0]
+  accelerator: gpu
+  devices: 1
 
   min_epochs: 200
   max_epochs: ${.min_epochs}
