@@ -9,7 +9,6 @@ import torch.nn as nn
 from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, trunc_normal_
 from timm.models.layers.helpers import to_2tuple
-from timm.models.registry import register_model
 
 # from timm.models.convnext import _create_convnext
 from timm.models.swin_transformer import _create_swin_transformer
@@ -21,6 +20,26 @@ from src.models.components.resnets import resnet50 as _create_resnet50
 
 from src.models.components.attention import MultiheadAttention, AttentionMIL
 from src.models.components.simple_dense_net import SimpleAggregNet
+
+
+_MODELS = {}
+
+
+def register_model(factory):
+    _MODELS[factory.__name__] = factory
+
+    return factory
+
+
+def create_model(model_name, **kwargs):
+    if model_name not in _MODELS:
+        raise ValueError(f"Model <{model_name}> not registered.")
+
+    return _MODELS[model_name](**kwargs)
+
+
+def list_models():
+    return list(_MODELS.keys())
 
 
 @register_model
@@ -721,15 +740,30 @@ def poolformer_m48(**kwargs):
 @register_model
 def resnet10(**kwargs):
     model_args = dict(**kwargs)
-    model = _create_resnet10(num_classes=0, in_channels=1, **model_args)
+    model = _create_resnet10(num_classes=2, in_channels=1, **model_args)
     return model
 
 
 @register_model
 def resnet18(**kwargs):
     model_args = dict(**kwargs)
-    model = _create_resnet18(num_classes=0, in_channels=1, **model_args)
+    model = _create_resnet18(num_classes=2, in_channels=1, **model_args)
     return model
+
+
+@register_model
+def resnet18_imagenet():
+    resnet_18 = _create_resnet18(pretrained=True)
+
+    new_linear_layer = torch.nn.Linear(resnet_18.fc.in_features, 2)
+    resnet_18.fc = new_linear_layer
+
+    # resnet 18 takes 3 channels but our data is 1 channel
+    class ChannelRepeater(torch.nn.Module):
+        def forward(self, X: torch.Tensor):
+            return X.repeat(1, 3, 1, 1)
+
+    return torch.nn.Sequential(ChannelRepeater(), resnet_18)
 
 
 @register_model
@@ -829,10 +863,12 @@ def attention_classifier(input_dim, num_classes):
 
     return attention_model
 
+
 @register_model
 def attention_MIL(input_dim, num_classes):
     attentionMIL_model = AttentionMIL(input_dim, num_classes)
     return attentionMIL_model
+
 
 @register_model
 def linear_aggregation(input_dim, num_classes):
