@@ -21,7 +21,7 @@ from torchmetrics import (
 from torchmetrics.functional import auc, precision_recall_curve
 
 
-# from torchdrug.metrics import area_under_prc
+from torchdrug.metrics import area_under_prc
 
 GLEASONS = ["3+4", "4+3", "4+4", "4+5", "5+4", "5+5"]
 
@@ -136,6 +136,10 @@ class GleasonMetric:
         _logits = torch.cat(self.logits)
         if _logits.shape[0] == 0:
             return "empty"
+
+        print(_logits.shape)
+        print(self.GS_name)
+
         return self.metric_collection(_logits, _labels)
 
     def log(self, logger):
