@@ -176,6 +176,7 @@ class SimCLR(ExactSSLModule):
             loss_dict["simclr_loss"],
             [],
             [],
+            [],
         )  # these two lists are a workaround to use online_evaluator + metric logger
 
     def validation_epoch_end(self, outs: List[Any]):

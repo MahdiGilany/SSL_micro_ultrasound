@@ -378,8 +378,10 @@ class CoreMetricManager(MetricManager):
         all_val_corelen = []
         all_test_corelen = []
         for i, center in enumerate(self.cohort_specifier):
-            corelen_dict["val"][center] = self.val_datasets[center].core_lengths
-            corelen_dict["test"][center] = self.test_datasets[center].core_lengths
+            corelen_dict["val"][center] = self.val_datasets[center].core_lengths if isinstance(self.val_datasets, dict)\
+                else self.val_datasets.core_lengths
+            corelen_dict["test"][center] = self.test_datasets[center].core_lengths if isinstance(self.test_datasets, dict)\
+                else self.test_datasets.core_lengths
             all_val_corelen.append(corelen_dict["val"][center])
             all_test_corelen.append(corelen_dict["test"][center])
 

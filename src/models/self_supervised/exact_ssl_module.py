@@ -191,7 +191,7 @@ class ExactSSLModule(LightningModule):
             Dict[str, Any]: dict with the classification loss, features and logits.
         """
 
-        X, targets = batch
+        X, targets, *metadata = batch
 
         X = [X] if isinstance(X, torch.Tensor) else X
 
@@ -213,7 +213,7 @@ class ExactSSLModule(LightningModule):
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int):
         # todo we can have shared step for train and val
-        X, targets = batch
+        X, targets, *metadata = batch
         X = [X] if isinstance(X, torch.Tensor) else X
 
         # check that we received the desired number of crops

@@ -96,16 +96,17 @@ class ExactOnlineEval(SSLOnlineEvaluator):
     def shared_step(self, pl_module: LightningModule, batch: Sequence):
         with torch.no_grad():
             with set_training(pl_module, False):
-                x, y = self.to_device(batch, pl_module.device) # todo only one linear layer added on top of one branch
+                x, y, *metadata = batch
+                x, y = self.to_device((x,y), pl_module.device) # todo only one linear layer added on top of one branch
                 representations = (pl_module(x)["feats"]).flatten(start_dim=1)
 
         # forward pass
-        mlp_logits = self.online_evaluator(representations)  # type: ignore[operator]
+        mlp_logits = pl_module.non_linear_evaluator(representations)  # type: ignore[operator]
         mlp_loss = F.cross_entropy(mlp_logits, y)
 
         # acc = accuracy(mlp_logits.softmax(-1), y)
 
-        return mlp_loss, mlp_logits, y
+        return mlp_loss, mlp_logits, y, *metadata
 
     def on_train_batch_end(
         self,
@@ -116,7 +117,7 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
-        mlp_loss, mlp_logits, y = self.shared_step(pl_module, batch)
+        mlp_loss, mlp_logits, y, *metadata = self.shared_step(pl_module, batch)
 
         # update finetune weights
         mlp_loss.backward()
@@ -139,7 +140,7 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         dataloader_idx: int,
     ) -> None:
         # mlp feed forward
-        mlp_loss, mlp_logits, y = self.shared_step(pl_module, batch)
+        mlp_loss, mlp_logits, y, *metadata = self.shared_step(pl_module, batch)
 
         self.logging_combined_centers_loss(
             pl_module,
@@ -151,6 +152,7 @@ class ExactOnlineEval(SSLOnlineEvaluator):
         # reassigning the output. This will be accessed in metric_logger ## todo check if it works
         outputs[1].append(mlp_logits)
         outputs[2].append(y)
+        outputs[3].append(*metadata)
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
