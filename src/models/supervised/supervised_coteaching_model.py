@@ -64,8 +64,8 @@ class SupervisedCoteachingModel(EvaluationBase):
             logits1 = self.model1(X)
             logits2 = self.model2(X)
 
-            loss1 = F.cross_entropy(logits1, y)
-            loss2 = F.cross_entropy(logits2, y)
+            loss1 = F.cross_entropy(logits1, y, reduce=False)
+            loss2 = F.cross_entropy(logits2, y, reduce=False)
 
             r_t = self.get_remember_rate()
             total_samples = len(y)
@@ -74,8 +74,13 @@ class SupervisedCoteachingModel(EvaluationBase):
             _, ind_for_loss1 = torch.topk(loss2, samples_to_remember, largest=False)
             _, ind_for_loss2 = torch.topk(loss1, samples_to_remember, largest=False)
 
-            loss1 = loss1[ind_for_loss1]
-            loss2 = loss2[ind_for_loss2]
+            loss_filter_1 = torch.zeros((loss1.size(0))).to(self.device)
+            loss_filter_1[ind_for_loss1] = 1.0
+            loss1 = (loss_filter_1 * loss1).sum()
+
+            loss_filter_2 = torch.zeros((loss2.size(0))).to(self.device)
+            loss_filter_2[ind_for_loss2] = 1.0
+            loss2 = (loss_filter_2 * loss2).sum()
 
             loss = loss1 + loss2
 
@@ -89,3 +94,9 @@ class SupervisedCoteachingModel(EvaluationBase):
             self.final_remember_rate,
             self.final_remember_rate_epoch_frac,
         )
+
+    def on_epoch_end(self):
+        self.log("remember_rate", self.get_remember_rate())
+
+    def forward(self, X):
+        return self.model1(X)
