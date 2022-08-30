@@ -16,6 +16,8 @@ class SupervisedModel(EvaluationBase):
         super().__init__(
             batch_size=batch_size, epochs=epochs, learning_rate=learning_rate, **kwargs
         )
+        self.save_hyperparameters()
+        self.backbone_name = backbone
         self.backbone = create_model(backbone)
 
     def shared_step(self, batch) -> SharedStepOutput:
