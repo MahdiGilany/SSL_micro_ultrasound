@@ -3,7 +3,7 @@
 #SBATCH -J run
 #SBATCH --ntasks=1
 #SBATCH -c 16
-#SBATCH --time=1:00:00
+#SBATCH --time=6:00:00
 #SBATCH --partition=t4v1,t4v2,rtx6000
 #SBATCH --qos=normal
 #SBATCH --export=ALL
@@ -40,12 +40,38 @@
 #
 
 
-name=sup_imnet-init_us-augs
+#name=sup_imnet-init_us-augs
+#
+#/h/pwilson/anaconda3/envs/exact/bin/python train.py \
+#    experiment=fully_supervised \
+#    datamodule.resample_train_val_seed=$seed0 \
+#    seed=$seed1 \
+#    logger.wandb.group=${name} \
+#    name=${name} \
+#    model.backbone=resnet18_imagenet  #resnet18_imagenet, #resnet10
 
-/h/pwilson/anaconda3/envs/exact/bin/python train.py \
-    experiment=fully_supervised \
-    datamodule.resample_train_val_seed=$seed0 \
-    seed=$seed1 \
-    logger.wandb.group=${name} \
+
+name=vicreg_pre-D-uva-prostate_lineval-D-uva-needle_resnet16_crop_plus_us
+
+/h/pwilson/anaconda3/envs/exact/bin/python train_combined.py \
+    datamodule/self_supervised=self_supervised \
+    datamodule.self_supervised.needle_region_only=False \
+    datamodule.self_supervised.resample_train_val_seed=${seed0} \
+    datamodule/supervised=train_uva_test_both \
+    datamodule/augmentations=crops_plus_ultrasound_augs \
+    datamodule.supervised.resample_train_val_seed=${seed0} \
+    seed=${seed1} \
     name=${name} \
-    model.backbone=resnet18_imagenet  #resnet18_imagenet, #resnet10
+    logger.wandb.group=${name} \
+    model.pretrain.backbone=resnet18 \
+    trainer.pretrain.resume_from_checkpoint=null
+
+
+#/h/pwilson/anaconda3/envs/exact/bin/python train_combined.py \
+#    datamodule.self_supervised.needle_region_only=False \
+#    datamodule.self_supervised.resample_train_val_seed=${seed0} \
+#    datamodule/supervised=train_uva_test_both \
+#    datamodule.supervised.resample_train_val_seed=${seed0} \
+#    seed=${seed1} \
+#    name=${name} \
+#    logger.wandb.group=${name} 
