@@ -15,6 +15,8 @@ from torchmetrics import (
 from warnings import warn
 import torch_optimizer
 
+from ..supervised.supervised_model import SupervisedModel
+
 
 class ExactFineTuner(SSLFineTuner):
     """
@@ -45,7 +47,16 @@ class ExactFineTuner(SSLFineTuner):
         self.max_epochs = epochs
         self.num_classes = kwargs["num_classes"]
 
-        self.backbone = backbone
+        if isinstance(backbone, SupervisedModel):
+            self.backbone = backbone
+            assert (
+                backbone.backbone_name == "resnet10"
+            ), f"backbones other than resnet10 not supported"
+            self.backbone.backbone.fc = torch.nn.Identity()
+
+        else:
+            self.backbone = backbone
+
         if ckpt_path:
             self.backbone = backbone.load_from_checkpoint(ckpt_path, strict=False)
         else:
@@ -75,17 +86,23 @@ class ExactFineTuner(SSLFineTuner):
 
         if self.semi_sup:
             # feats = self.backbone(x, proj=False)["feats"]
-            feats = self.backbone(x)["feats"]
+            feats = self.get_feats(x)
         else:
             with torch.no_grad():
                 # feats = self.backbone(x, proj=False)["feats"]
-                feats = self.backbone(x)["feats"]
+                feats = self.get_feats(x)
 
         feats = feats.view(feats.size(0), -1)
         logits = self.linear_layer(feats)
         loss = F.cross_entropy(logits, y)
 
         return loss, logits, y, *metadata
+
+    def get_feats(self, x):
+        if isinstance(self.backbone, SupervisedModel):
+            return self.backbone.backbone(x)
+        else:
+            return self.backbone(x)["feats"]
 
     def training_step(self, batch, batch_idx):
         loss, logits, y, *metadata = self.shared_step(batch)
