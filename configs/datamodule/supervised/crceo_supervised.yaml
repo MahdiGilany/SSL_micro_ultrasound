@@ -2,10 +2,9 @@
 
 _target_: src.datamodules.exact_datamodule.ExactDataModule
 
-cohort_specifier: [UVA600, CRCEO428]
+cohort_specifier: [CRCEO428]
 batch_size: 32
 num_workers: 16
-train_centers: [UVA600]
 mode: "supervised"
 needle_region_only: True
 prostate_region_only: True

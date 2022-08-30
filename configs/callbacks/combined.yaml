@@ -6,7 +6,7 @@ pretrain:
     save_top_k: 1 # save k best models (determined by above metric)
     save_last: True # additionaly always save model from last epoch
     verbose: True
-    dirpath: "checkpoints/${name}_${oc.env:SLURM_JOB_ID}"
+    dirpath: "${checkpoint_root}/pretrain"
     filename: "epoch_{epoch:03d}"
     auto_insert_metric_name: False
 
@@ -50,6 +50,6 @@ finetune:
     save_top_k: 1 # save k best models (determined by above metric)
     save_last: False # additionaly always save model from last epoch
     verbose: True
-    dirpath: "checkpoints/${name}_finetune_${oc.env:SLURM_JOB_ID}"
+    dirpath: "${checkpoint_root}/finetune"
     filename: "epoch_{epoch:03d}"
     auto_insert_metric_name: False
