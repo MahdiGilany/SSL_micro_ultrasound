@@ -126,7 +126,9 @@ class ExactSSLModule(LightningModule):
         # turn on multicrop if there are small crops
         self.multicrop = self.num_small_crops != 0
 
-        assert backbone in ExactSSLModule._SUPPORTED_BACKBONES
+        assert (
+            backbone in ExactSSLModule._SUPPORTED_BACKBONES
+        ), f"backbone {backbone} not supported."
         self.base_model = self._SUPPORTED_BACKBONES[backbone]
 
         self.backbone_name = backbone
