@@ -1,0 +1,10 @@
+# @package _global_
+
+defaults: 
+  - override /datamodule/self_supervised: supervised.yaml
+  - override /datamodule/supervised: crceo_supervised.yaml
+  - override /datamodule/augmentations: no_augmentations.yaml
+  - override /model/pretrain: supervised.yaml
+
+
+

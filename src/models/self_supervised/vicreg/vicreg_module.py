@@ -183,7 +183,7 @@ class VICReg(ExactSSLModule):
         
         self.logging_combined_centers_losses(dataloader_idx, vicreg_loss, all_losses)
 
-        return vicreg_loss, [], [] # these two lists are a workaround to use online_evaluator + metric logger
+        return vicreg_loss, [], [], [] # these two lists are a workaround to use online_evaluator + metric logger
 
     def validation_epoch_end(self, outs: List[Any]):
         kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}

@@ -11,9 +11,11 @@ from torchmetrics import (
     ConfusionMatrix,
     AUROC,
 )
-from warnings import warn
 
+from warnings import warn
 import torch_optimizer
+
+from ..supervised.supervised_model import SupervisedModel
 
 
 class ExactFineTuner(SSLFineTuner):
@@ -29,7 +31,7 @@ class ExactFineTuner(SSLFineTuner):
         semi_sup: bool = False,
         batch_size: int = 32,
         epochs: int = 100,
-        **kwargs
+        **kwargs,
     ):
         super(ExactFineTuner, self).__init__(backbone=backbone, **kwargs)
 
@@ -45,22 +47,32 @@ class ExactFineTuner(SSLFineTuner):
         self.max_epochs = epochs
         self.num_classes = kwargs["num_classes"]
 
-        self.backbone = backbone
+        if isinstance(backbone, SupervisedModel):
+            self.backbone = backbone
+            assert (
+                backbone.backbone_name == "resnet10"
+            ), f"backbones other than resnet10 not supported"
+            self.backbone.backbone.fc = torch.nn.Identity()
+
+        else:
+            self.backbone = backbone
+
         if ckpt_path:
             self.backbone = backbone.load_from_checkpoint(ckpt_path, strict=False)
         else:
             warn(
                 "You are using the finetuner model with no loadable checkpoint. The model will be randomly initialized."
             )
-            assert semi_sup==True, "checkpoint for loading weights is not determined." \
-                                   "If you want to train in supervised fashion, then semi-supervised mode must be True"
+            assert semi_sup == True, (
+                "checkpoint for loading weights is not determined."
+                "If you want to train in supervised fashion, then semi-supervised mode must be True"
+            )
 
         self.train_acc = Accuracy()
         self.inferred_no_centers = 1
 
         self.val_macroLoss_all_centers = []
         self.test_macroLoss_all_centers = []
-
 
     def on_train_epoch_start(self) -> None:
         """Changing model to eval() mode has to happen at the
@@ -73,16 +85,24 @@ class ExactFineTuner(SSLFineTuner):
         x, y, *metadata = batch
 
         if self.semi_sup:
-            feats = self.backbone(x, proj=False)["feats"]
+            # feats = self.backbone(x, proj=False)["feats"]
+            feats = self.get_feats(x)
         else:
             with torch.no_grad():
-                feats = self.backbone(x, proj=False)["feats"]
+                # feats = self.backbone(x, proj=False)["feats"]
+                feats = self.get_feats(x)
 
         feats = feats.view(feats.size(0), -1)
         logits = self.linear_layer(feats)
         loss = F.cross_entropy(logits, y)
 
         return loss, logits, y, *metadata
+
+    def get_feats(self, x):
+        if isinstance(self.backbone, SupervisedModel):
+            return self.backbone.backbone(x)
+        else:
+            return self.backbone(x)["feats"]
 
     def training_step(self, batch, batch_idx):
         loss, logits, y, *metadata = self.shared_step(batch)
@@ -114,9 +134,24 @@ class ExactFineTuner(SSLFineTuner):
         return loss, logits, y, *metadata
 
     def validation_epoch_end(self, outs):
-        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
-        self.log("val/finetune_loss", torch.mean(torch.tensor(self.val_macroLoss_all_centers)), prog_bar=True, **kwargs)
-        self.log("test/finetune_loss", torch.mean(torch.tensor(self.test_macroLoss_all_centers)), prog_bar=True, **kwargs)
+        kwargs = {
+            "on_step": False,
+            "on_epoch": True,
+            "sync_dist": True,
+            "add_dataloader_idx": False,
+        }
+        self.log(
+            "val/finetune_loss",
+            torch.mean(torch.tensor(self.val_macroLoss_all_centers)),
+            prog_bar=True,
+            **kwargs,
+        )
+        self.log(
+            "test/finetune_loss",
+            torch.mean(torch.tensor(self.test_macroLoss_all_centers)),
+            prog_bar=True,
+            **kwargs,
+        )
 
     def test_step(self, batch, batch_idx):
         pass
@@ -140,8 +175,8 @@ class ExactFineTuner(SSLFineTuner):
     def configure_optimizers(self):
         opt_params = (
             [
-                {'params': self.linear_layer.parameters()},
-                {'params': self.backbone.parameters()},
+                {"params": self.linear_layer.parameters()},
+                {"params": self.backbone.parameters()},
             ]
             if self.semi_sup
             else self.linear_layer.parameters()
@@ -181,10 +216,7 @@ class ExactFineTuner(SSLFineTuner):
         return [optimizer], [scheduler]
 
     def set_optim_algo(self, **kwargs):
-        optim_algo = {
-            'Adam': torch.optim.Adam,
-            'Novograd': torch_optimizer.NovoGrad
-        }
+        optim_algo = {"Adam": torch.optim.Adam, "Novograd": torch_optimizer.NovoGrad}
 
         if self.optim_algo not in optim_algo.keys():
             raise ValueError(f"{self.optim_algo} not in {optim_algo.keys()}")
@@ -193,11 +225,13 @@ class ExactFineTuner(SSLFineTuner):
 
     def logging_combined_centers_loss(self, dataloader_idx, loss):
         """macro loss for centers"""
-        self.inferred_no_centers = dataloader_idx + 1 \
-            if dataloader_idx + 1 > self.inferred_no_centers \
+        self.inferred_no_centers = (
+            dataloader_idx + 1
+            if dataloader_idx + 1 > self.inferred_no_centers
             else self.inferred_no_centers
+        )
 
-        if dataloader_idx < self.inferred_no_centers/2.:
+        if dataloader_idx < self.inferred_no_centers / 2.0:
             self.val_macroLoss_all_centers.append(loss)
         else:
             self.test_macroLoss_all_centers.append(loss)
@@ -205,10 +239,13 @@ class ExactFineTuner(SSLFineTuner):
 
 from src.models.components.backbones import *
 import pytorch_lightning as pl
+
+
 class ExactCoreFineTuner(pl.LightningModule):
     """
     This class implements finetunjng ssl module on cores not patches. It attaches a neural net on top and trains it.
     """
+
     _SUPPORTED_HEADS = {
         "attention_classifier": attention_classifier,
         "attention_MIL": attention_MIL,
@@ -226,16 +263,16 @@ class ExactCoreFineTuner(pl.LightningModule):
         epochs: int = 100,
         in_features: int = 512,
         num_classes: int = 2,
-        dropout: float = 0.,
+        dropout: float = 0.0,
         learning_rate: float = 1e-4,
         weight_decay: float = 1e-6,
         scheduler_type: str = "warmup_cosine",
         decay_epochs: List = [60, 80],
         gamma: float = 0.1,
-        final_lr: float = 0.,
+        final_lr: float = 0.0,
         warmup_epochs=10,
         warmup_start_lr=0.0,
-        **kwargs
+        **kwargs,
     ):
         super(ExactCoreFineTuner, self).__init__()
 
@@ -249,8 +286,10 @@ class ExactCoreFineTuner(pl.LightningModule):
             warn(
                 "You are using the finetuner model with no loadable checkpoint. The model will be randomly initialized."
             )
-            assert semi_sup==True, "checkpoint for loading weights is not determined." \
-                                   "If you want to train in supervised fashion, then semi-supervised mode must be True"
+            assert semi_sup == True, (
+                "checkpoint for loading weights is not determined."
+                "If you want to train in supervised fashion, then semi-supervised mode must be True"
+            )
 
         self.optim_algo = optim_algo
         # whether to do semi supervised or not
@@ -291,7 +330,7 @@ class ExactCoreFineTuner(pl.LightningModule):
 
         feats = torch.tensor([], device=x.device)
         for i in range(0, x.shape[0], virtual_batch):
-            xi = x[i:i + virtual_batch, ...]
+            xi = x[i : i + virtual_batch, ...]
             if self.semi_sup:
                 feat = self.backbone(xi, proj=False)["feats"]
             else:
@@ -301,7 +340,9 @@ class ExactCoreFineTuner(pl.LightningModule):
 
         feats = feats.view(feats.size(0), -1)
         logits = self.head_network(feats, core_len_cumsum)
-        y = torch.tensor([int(grade != 'Benign') for grade in metadata[0]["grade"]], device=x.device)
+        y = torch.tensor(
+            [int(grade != "Benign") for grade in metadata[0]["grade"]], device=x.device
+        )
         loss = F.cross_entropy(logits, y)
 
         return loss, logits, y, *metadata
@@ -336,9 +377,24 @@ class ExactCoreFineTuner(pl.LightningModule):
         return loss, logits, y, *metadata
 
     def validation_epoch_end(self, outs):
-        kwargs = {'on_step': False, 'on_epoch': True, 'sync_dist': True, 'add_dataloader_idx': False}
-        self.log("val/finetune_loss", torch.mean(torch.tensor(self.val_macroLoss_all_centers)), prog_bar=True, **kwargs)
-        self.log("test/finetune_loss", torch.mean(torch.tensor(self.test_macroLoss_all_centers)), prog_bar=True, **kwargs)
+        kwargs = {
+            "on_step": False,
+            "on_epoch": True,
+            "sync_dist": True,
+            "add_dataloader_idx": False,
+        }
+        self.log(
+            "val/finetune_loss",
+            torch.mean(torch.tensor(self.val_macroLoss_all_centers)),
+            prog_bar=True,
+            **kwargs,
+        )
+        self.log(
+            "test/finetune_loss",
+            torch.mean(torch.tensor(self.test_macroLoss_all_centers)),
+            prog_bar=True,
+            **kwargs,
+        )
 
     def test_step(self, batch, batch_idx):
         pass
@@ -362,8 +418,8 @@ class ExactCoreFineTuner(pl.LightningModule):
     def configure_optimizers(self):
         opt_params = (
             [
-                {'params': self.head_network.parameters()},
-                {'params': self.backbone.parameters()},
+                {"params": self.head_network.parameters()},
+                {"params": self.backbone.parameters()},
             ]
             if self.semi_sup
             else self.head_network.parameters()
@@ -403,10 +459,7 @@ class ExactCoreFineTuner(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def set_optim_algo(self, **kwargs):
-        optim_algo = {
-            'Adam': torch.optim.Adam,
-            'Novograd': torch_optimizer.NovoGrad
-        }
+        optim_algo = {"Adam": torch.optim.Adam, "Novograd": torch_optimizer.NovoGrad}
 
         if self.optim_algo not in optim_algo.keys():
             raise ValueError(f"{self.optim_algo} not in {optim_algo.keys()}")
@@ -415,11 +468,13 @@ class ExactCoreFineTuner(pl.LightningModule):
 
     def logging_combined_centers_loss(self, dataloader_idx, loss):
         """macro loss for centers"""
-        self.inferred_no_centers = dataloader_idx + 1 \
-            if dataloader_idx + 1 > self.inferred_no_centers \
+        self.inferred_no_centers = (
+            dataloader_idx + 1
+            if dataloader_idx + 1 > self.inferred_no_centers
             else self.inferred_no_centers
+        )
 
-        if dataloader_idx < self.inferred_no_centers/2.:
+        if dataloader_idx < self.inferred_no_centers / 2.0:
             self.val_macroLoss_all_centers.append(loss)
         else:
             self.test_macroLoss_all_centers.append(loss)

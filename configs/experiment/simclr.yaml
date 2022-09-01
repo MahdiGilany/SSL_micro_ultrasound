@@ -1,0 +1,8 @@
+# @package _global_
+
+defaults: 
+  - override /model/pretrain: simclr
+  - override /datamodule/augmentations: crops_plus_ultrasound_augs
+
+name: simclr_bsz${datamodule.self_supervised.batch_size}
+pretrain_monitored_metric: val/ssl/simclr_loss

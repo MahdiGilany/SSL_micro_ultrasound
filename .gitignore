@@ -150,3 +150,8 @@ wandb/
 
 /outputs
 /multirun
+
+/wandb
+/outputs
+/logs
+/checkpoints

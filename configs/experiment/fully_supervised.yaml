@@ -1,0 +1,42 @@
+
+# @package _global_
+
+defaults: 
+  - override /datamodule: supervised.yaml
+  - override /model: supervised_model.yaml
+  - override /callbacks: finetuner_callbacks_paul.yaml
+  - override /trainer: exact_trainer.yaml
+  - override /logger: wandb
+
+
+trainer:
+  min_epochs: 50
+  max_epochs: 50
+  gradient_clip_val: null
+  limit_train_batches: null
+  limit_val_batches: null
+
+
+datamodule:
+  random_phase_shift: False
+  random_phase_distort: False
+  random_phase_distort_strength: 0.1
+  random_phase_distort_freq_limit: 0.3
+  random_envelope_distort: False
+  random_envelope_distort_strength: 0.5
+  random_envelope_distort_freq_limit: 0.1
+  random_bandstop: False
+  random_bandstop_width: 0.1
+  random_freq_stretch: False
+  random_freq_stretch_range:  0.98
+  use_augmentations:  False
+  aug_prob:  0.3
+  random_erasing:  False
+  random_horizontal_flip:  False
+  random_invert:  False
+  random_vertical_flip:  False
+  random_affine_translation:  0.
+  random_affine_rotation:  .1
+  random_affine_shear:  [0, 0, 0, 0]
+  random_resized_crop:  False
+  random_resized_crop_scale:  0.5

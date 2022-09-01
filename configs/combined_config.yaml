@@ -8,8 +8,6 @@ defaults:
   - callbacks: combined.yaml
   - logger: wandb # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: combined.yaml
-  - augmentations: baseline_augs.yaml
-
   # experiment configs allow for version control of specific configurations
   # e.g. best hyperparameters for each combination of model and datamodule
   - experiment: null
@@ -25,13 +23,13 @@ defaults:
   - optional local: default.yaml
 
   # enable color logging
-  - override hydra/hydra_logging: colorlog
-  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: default
+  - override hydra/job_logging: default
 
 # path to original working directory
 # hydra hijacks working directory by changing it to the new log directory
 # https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
-original_work_dir: ${hydra:runtime.cwd}
+#original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
 data_dir: null 
@@ -56,7 +54,8 @@ seed: null
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
 name: null
-project: exact-vicreg
 
 pretrain_monitored_metric: val/ssl/var_loss
 save_feature_extractor_to_wandb: True
+
+checkpoint_root: /checkpoint/pwilson/${oc.env:SLURM_JOB_ID}

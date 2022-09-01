@@ -1,0 +1,52 @@
+
+_target_: src.datamodules.exact_datamodule.ExactDataModule
+
+cohort_specifier: [UVA600, CRCEO428]
+val_centers: all
+test_centers: all
+truncate_train_data: null
+batch_size: 64
+num_workers: 32
+mode: "self-supervised"
+needle_region_only: False
+prostate_region_only: True
+minimum_involvement: null
+return_metadata: False
+
+resample_train_val: True
+resample_train_val_seed: 26
+train_val_ratio: 0.25
+needle_region_intersection_threshold: 0.6
+prostate_region_intersection_threshold: 0.9
+
+random_phase_shift: False
+random_phase_distort: False
+random_phase_distort_strength: 0.1
+random_phase_distort_freq_limit: 0.3
+random_envelope_distort: False
+random_envelope_distort_strength: 0.2
+random_envelope_distort_freq_limit: 0.1
+random_bandstop: False
+random_bandstop_width: 0.1
+random_freq_stretch: False
+random_freq_stretch_range:  0.98
+use_augmentations:  False
+aug_prob:  0.2
+random_erasing:  True
+random_horizontal_flip:  True
+random_invert:  True
+random_vertical_flip:  True
+random_affine_translation:  0.2
+random_affine_rotation:  0
+random_affine_shear:  [0, 0, 0, 0]
+random_resized_crop:  False
+random_resized_crop_scale:  0.5
+
+balance_classes_train: True
+normalize_mode: instance
+normalize_type: min-max
+normalize_truncate: True
+
+patch_size_mm: [5, 5]
+patch_stride_mm: [3, 3]
+patch_size_pixels: [256, 256]
