@@ -31,9 +31,10 @@ class ExactFineTuner(SSLFineTuner):
         semi_sup: bool = False,
         batch_size: int = 32,
         epochs: int = 100,
+        num_classes: int = 2,
         **kwargs,
     ):
-        super(ExactFineTuner, self).__init__(backbone=backbone, **kwargs)
+        super(ExactFineTuner, self).__init__(backbone=backbone, num_classes=num_classes, **kwargs)
 
         # whether to do semi supervised or not
         self.semi_sup = semi_sup
@@ -45,7 +46,7 @@ class ExactFineTuner(SSLFineTuner):
         self.optim_algo = optim_algo
         self.batch_size = batch_size
         self.max_epochs = epochs
-        self.num_classes = kwargs["num_classes"]
+        self.num_classes = num_classes
 
         if isinstance(backbone, SupervisedModel):
             self.backbone = backbone

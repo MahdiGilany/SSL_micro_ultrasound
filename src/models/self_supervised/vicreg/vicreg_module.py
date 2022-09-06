@@ -13,8 +13,8 @@ from ..losses.vicreg_loss import vicreg_loss_func
 class VICReg(ExactSSLModule):
     def __init__(
         self,
-        proj_output_dim: int,
-        proj_hidden_dim: int,
+        proj_output_dim: int = 512,
+        proj_hidden_dim: int = 512,
         sim_loss_weight: float = 25.0,
         var_loss_weight: float = 25.0,
         cov_loss_weight: float = 25.0,
