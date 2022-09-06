@@ -1,0 +1,54 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /trainer: exact_trainer.yaml
+  - override /datamodule: exact_datamodule.yaml
+  - override /model: test_finetuner_module.yaml
+  - override /callbacks: finetuner_callbacks.yaml
+  - override /logger: wandb
+
+# Only testing the model
+train: False
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+name: "testCRCEO428_fintunUVA600_prst_preTrnUVA600"
+
+seed: 12345
+
+datamodule:
+  batch_size: 32
+  num_workers: 4
+  mode: 'supervised'
+  cohort_specifier:
+#    - 'UVA600'
+    - 'CRCEO428'
+  needle_region_only: True
+  prostate_region_only: True
+  minimum_involvement: 0.4
+  train_val_ratio: 0.25
+  resample_train_val_seed: 26
+  patch_size_mm: [5, 5]
+  patch_stride_mm: [1, 1]
+  needle_region_intersection_threshold: 0.6
+  prostate_region_intersection_threshold: 0.9
+  use_augmentations: False
+  aug_prob: 0.4
+
+model:
+  ckpt_path: ${original_work_dir}/logs/experiments/runs/fintunUVA600_ckpt/2022-08-30_10-10-58/checkpoints/epoch_011.ckpt #26
+  backbone_ckpt_path: ${original_work_dir}/logs/experiments/runs/vicreg_UVA600_prstRgn_strd3/2022-06-17_21-03-13/checkpoints/epoch_189.ckpt #26
+  optim_algo: "Adam"
+  semi_sup: False
+  learning_rate: 0.0001
+
+logger:
+  wandb:
+    name: ${name}
+    tags: ["exact", "test_finetune", "IEEETransaction"]
+    entity: mahdigilany
+    project: IEEETransaction

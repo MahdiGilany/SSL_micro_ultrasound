@@ -72,7 +72,7 @@ class ExactSSLModule(LightningModule):
 
     def __init__(
         self,
-        backbone: str,
+        backbone: str = "resnet10",
         lr: float = 0.0001,
         weight_decay: float = 0.000,
         optim_algo: Literal["Adam", "Novograd"] = "Adam",

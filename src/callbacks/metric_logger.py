@@ -176,6 +176,29 @@ class MetricLogger(Callback):
             if self.corewise_metrics:
                 self.core_metric_manager.log_optimum(pl_module, best_epoch)
 
+    def on_test_batch_end(
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
+        outputs: Optional[STEP_OUTPUT],
+        batch: Any,
+        batch_idx: int,
+        dataloader_idx: int,
+    ) -> None:
+        self.on_validation_batch_end(
+            trainer,
+            pl_module,
+            outputs,
+            batch,
+            batch_idx,
+            dataloader_idx,
+        )
+
+    def on_test_epoch_end(
+            self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
+    ) -> None:
+        self.on_validation_epoch_end(trainer, pl_module)
+
     def log_core_scatter(self, trainer, pl_module):
         val_core_probs = []
         test_core_probs = []
