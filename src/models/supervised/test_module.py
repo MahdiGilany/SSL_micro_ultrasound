@@ -82,8 +82,9 @@ class ExacTestFinetuner(pl.LightningModule):
         """Changing model to eval() mode has to happen at the
         start of every epoch, and should only happen if we are not in semi-supervised mode
         """
+        next(self.test_module.linear_layer.children())[2].reset_parameters()
         if not self.semi_sup:
-            self.test_module.eval()
+            self.test_module.backbone.eval()
 
     def shared_step(self, batch):
         x, y, *metadata = batch
@@ -101,7 +102,7 @@ class ExacTestFinetuner(pl.LightningModule):
         return loss, logits, y, *metadata
 
     def training_step(self, batch, batch_idx):
-        loss, logits, y, *metadata = self.test_module.shared_step(batch)
+        loss, logits, y, *metadata = self.shared_step(batch)
         self.train_acc(logits.softmax(-1), y)
 
         self.log(

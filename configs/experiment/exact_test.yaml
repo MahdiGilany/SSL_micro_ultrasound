@@ -7,7 +7,7 @@ defaults:
   - override /trainer: exact_trainer.yaml
   - override /datamodule: exact_datamodule.yaml
   - override /model: test_finetuner_module.yaml
-  - override /callbacks: finetuner_callbacks.yaml
+  - override /callbacks: test_finetuner_callbacks.yaml
   - override /logger: wandb
 
 # Only testing the model
@@ -16,7 +16,7 @@ train: False
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "testCRCEO428_fintunUVA600_prst_preTrnUVA600"
+name: "testCRCEO428_fintunUVA600_prst_preTrnUVA600_debug"
 
 seed: 12345
 
@@ -52,3 +52,7 @@ logger:
     tags: ["exact", "test_finetune", "IEEETransaction"]
     entity: mahdigilany
     project: IEEETransaction
+
+callbacks:
+  early_stopping:
+    monitor: "val/finetune_auc"
