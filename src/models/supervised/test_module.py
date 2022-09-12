@@ -123,7 +123,7 @@ class ExacTestFinetuner(pl.LightningModule):
         )
         return loss
 
-    def val_step(self, batch, batch_idx, dataloader_idx: int):
+    def validation_step(self, batch, batch_idx, dataloader_idx: int):
         loss, logits, y, *metadata = self.shared_step(batch)
 
         self.logging_combined_centers_loss(dataloader_idx, loss)
