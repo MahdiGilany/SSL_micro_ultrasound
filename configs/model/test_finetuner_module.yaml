@@ -4,7 +4,7 @@ test_module:
   _target_: src.models.self_supervised.finetuner_module.ExactFineTuner
   num_classes: 2
   semi_sup: True
-  ckpt_path: ${model.backbone_ckpt_path}
+  ckpt_path: null
   in_features: 512
   hidden_dim: null
   backbone:
