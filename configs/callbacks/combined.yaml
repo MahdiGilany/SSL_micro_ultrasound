@@ -1,55 +1,5 @@
-pretrain: 
-  model_checkpoint:
-    _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: ${pretrain_monitored_metric} # name of the logged metric which determines when model is improving #todo what if not online evaluator
-    mode: "min" # "max" means higher metric value is better, can be also "min"
-    save_top_k: 1 # save k best models (determined by above metric)
-    save_last: True # additionaly always save model from last epoch
-    verbose: True
-    dirpath: "${checkpoint_root}/pretrain"
-    filename: "epoch_{epoch:03d}"
-    auto_insert_metric_name: False
 
-  model_summary:
-    _target_: pytorch_lightning.callbacks.RichModelSummary
-    max_depth: -1
+defaults: 
+  - /callbacks@pretrain: pretrain.yaml
+  - /callbacks@finetune: finetune_paul.yaml
 
-  progress_bar: 
-    _target_: pytorch_lightning.callbacks.TQDMProgressBar
-    refresh_rate: 50
-
-  logger_checkpoint: 
-    _target_: src.callbacks.wandb_checkpoint.WandbLoggerCheckpoint
-
-finetune: 
-
-  model_summary:
-    _target_: pytorch_lightning.callbacks.RichModelSummary
-    max_depth: -1
-
-  learning_rate_monitor:
-    _target_: pytorch_lightning.callbacks.LearningRateMonitor
-
-  metric_logger:
-    _target_: src.callbacks.metric_logger.MetricLogger
-    mode: "finetune"
-    num_classes: 2
-    corewise_inv_threshold: 0.5
-
-  progress_bar: 
-    _target_: pytorch_lightning.callbacks.TQDMProgressBar
-    refresh_rate: 50
-
-  logger_checkpoint: 
-    _target_: src.callbacks.wandb_checkpoint.WandbLoggerCheckpoint
-
-  model_checkpoint:
-    _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: val/finetune_auc # name of the logged metric which determines when model is improving #todo what if not online evaluator
-    mode: "max" # "max" means higher metric value is better, can be also "min"
-    save_top_k: 1 # save k best models (determined by above metric)
-    save_last: False # additionaly always save model from last epoch
-    verbose: True
-    dirpath: "${checkpoint_root}/finetune"
-    filename: "epoch_{epoch:03d}"
-    auto_insert_metric_name: False

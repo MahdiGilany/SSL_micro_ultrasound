@@ -1,7 +1,7 @@
 _target_: src.datamodules.exact_datamodule.ExactDataModule
 
-cohort_specifier: [UVA600, CRCEO, JH, PMCC, PCC]
-truncate_train_data: 0.1
+cohort_specifier: [UVA, CRCEO, JH, PMCC, PCC]
+truncate_train_data: null 
 batch_size: 64
 num_workers: 16
 mode: "self-supervised"
@@ -9,13 +9,16 @@ needle_region_only: False
 prostate_region_only: False
 minimum_involvement: null
 return_metadata: False
+undersample_benign: False 
+balance_classes_train: False
 
 resample_train_val: True
 resample_train_val_seed: 26
-train_val_ratio: 0.25
+train_val_ratio: 0.1
 needle_region_intersection_threshold: 0.6
 prostate_region_intersection_threshold: 0.9
 
+# augs will be overrided
 random_phase_shift: False
 random_phase_distort: False
 random_phase_distort_strength: 0.1
@@ -39,7 +42,6 @@ random_affine_shear:  [0, 0, 0, 0]
 random_resized_crop:  False
 random_resized_crop_scale:  0.5
 
-balance_classes_train: True
 normalize_mode: instance
 normalize_type: min-max
 normalize_truncate: True

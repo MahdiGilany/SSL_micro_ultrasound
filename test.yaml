@@ -1,0 +1,87 @@
+- name: big_ssl__bsz64_resnet18
+  time: 09/08/2022, 13:34:55
+  best_score:
+    name: val/ssl/var_loss
+    value: 1.1268380880355835
+  best_checkpoint: /home/paulw/checkpoints/big_ssl__bsz64_resnet18/pretrain/epoch_001.ckpt
+  last_checkpoint: /home/paulw/checkpoints/big_ssl__bsz64_resnet18/pretrain/last.ckpt
+- name: big_ssl__bsz64_resnet18
+  time: 09/08/2022, 13:56:07
+  best_score:
+    name: val/ssl/var_loss
+    value: 1.2226814031600952
+  best_checkpoint: /home/paulw/checkpoints/big_ssl__bsz64_resnet18/pretrain/epoch_000.ckpt
+  last_checkpoint: /home/paulw/checkpoints/big_ssl__bsz64_resnet18/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/15/2022, 16:26:06
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.402456134557724
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_199_val/ssl/var_loss_0.40.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/16/2022, 23:54:44
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.40704357624053955
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_199_val/ssl/var_loss_0.41.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/20/2022, 04:13:58
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.4040677547454834
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_199_val/ssl/var_loss_0.40-v1.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/21/2022, 07:55:17
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.40452465415000916
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_199_val/ssl/var_loss_0.40-v2.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/21/2022, 21:00:47
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.47106507420539856
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_199_val/ssl/var_loss_0.47.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/22/2022, 18:15:48
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.4665173590183258
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_199_val/ssl/var_loss_0.47-v1.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/23/2022, 17:45:31
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.3592403531074524
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_199_val/ssl/var_loss_0.36.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/24/2022, 13:52:51
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.8891025185585022
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_009_val/ssl/var_loss_0.89.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg
+- name: null
+  time: 09/24/2022, 20:14:54
+  best_score:
+    name: val/ssl/var_loss
+    value: 0.887886643409729
+  best_checkpoint: /home/paulw/checkpoints/None/pretrain/epoch_009_val/ssl/var_loss_0.89-v1.ckpt
+  last_checkpoint: /home/paulw/checkpoints/None/pretrain/last.ckpt
+  _target_: src.models.self_supervised.vicreg.vicreg_module.VICReg

@@ -1,0 +1,31 @@
+
+defaults: 
+  - /callbacks@online_evaluation: online_evaluation.yaml
+
+model_checkpoint:
+  _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  monitor: ${pretrain_monitored_metric} # name of the logged metric which determines when model is improving #todo what if not online evaluator
+  mode: "min" # "max" means higher metric value is better, can be also "min"
+  save_top_k: 1 # save k best models (determined by above metric)
+  save_last: True # additionaly always save model from last epoch
+  verbose: True
+  dirpath: "${oc.env:CHECKPOINT_ROOT}/${name}/pretrain"
+  filename: "epoch_{epoch:03d}_${.monitor}_{${.monitor}:.2f}"
+  auto_insert_metric_name: False
+
+model_summary:
+  _target_: pytorch_lightning.callbacks.RichModelSummary
+  max_depth: -1
+
+progress_bar: 
+  _target_: pytorch_lightning.callbacks.TQDMProgressBar
+  refresh_rate: 50
+
+logger_checkpoint: 
+  _target_: src.callbacks.wandb_checkpoint.WandbLoggerCheckpoint
+
+checkpoint_saver: 
+  _target_: src.callbacks.checkpoint_saver.CheckpointSaver
+  name: ${name}
+  fpath: test.yaml
+  

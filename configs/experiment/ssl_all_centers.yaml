@@ -1,0 +1,20 @@
+# @package _global_
+
+defaults: 
+  - override /datamodule@datamodule.self_supervised: ssl_all_centers
+  - override /datamodule@datamodule.supervised: supervised_allcenters
+
+datamodule: 
+  self_supervised: 
+    batch_size: 64
+
+model: 
+  pretrain: 
+    backbone: resnet18
+
+callbacks: 
+  pretrain: 
+    model_checkpoint: 
+      save_top_k: -1        # save all of them 
+
+name: big_ssl__bsz${datamodule.self_supervised.batch_size}_${model.pretrain.backbone}
