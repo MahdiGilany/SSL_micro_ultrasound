@@ -1,4 +1,5 @@
 
+
 model_summary:
   _target_: pytorch_lightning.callbacks.RichModelSummary
   max_depth: -1
@@ -20,18 +21,18 @@ logger_checkpoint:
   _target_: src.callbacks.wandb_checkpoint.WandbLoggerCheckpoint
 
 model_checkpoint:
-  _target_: pytorch_lightning.callbacks.ModelCheckpoint
-  monitor: val/finetune_auc # name of the logged metric which determines when model is improving #todo what if not online evaluator
-  mode: "max" # "max" means higher metric value is better, can be also "min"
-  save_top_k: 1 # save k best models (determined by above metric)
-  save_last: False # additionaly always save model from last epoch
-  verbose: True
-  dirpath: "${checkpoint_dir}"
-  filename: "epoch_{epoch:03d}"
-  auto_insert_metric_name: False
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: val/finetune_auc # name of the logged metric which determines when model is improving #todo what if not online evaluator
+    mode: "max" # "max" means higher metric value is better, can be also "min"
+    save_top_k: 1 # save k best models (determined by above metric)
+    save_last: False # additionaly always save model from last epoch
+    verbose: True
+    dirpath: "${oc.env:CHECKPOINT_ROOT}/${name}/finetune"
+    filename: "epoch_{epoch:03d}"
+    auto_insert_metric_name: False
 
 checkpoint_saver: 
   _target_: src.callbacks.checkpoint_saver.CheckpointSaver
   name: ${name}
-  fpath: test.yaml
+  fpath: finetune_ckpts.yaml
   

@@ -1,4 +1,5 @@
+
 defaults: 
-  - self_supervised: self_supervised.yaml
-  - supervised: supervised.yaml
+  - /datamodule@self_supervised: self_supervised.yaml
+  - /datamodule@supervised: supervised.yaml
   - augmentations: baseline_augs.yaml

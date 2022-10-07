@@ -14,6 +14,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 
 from src import utils
+from src.callbacks.online_evaluation import OnlineEvaluation
 
 log = utils.get_logger(__name__)
 
@@ -99,11 +100,19 @@ def train(config: DictConfig) -> Optional[float]:
         log.info("Starting training!")
         trainer.fit(model=model, datamodule=datamodule)
 
-    assert trainer.checkpoint_callback is not None
+    # prefer to resume training from online eval checkpoint
+    if hasattr(trainer, "online_eval_callback"):
+        online_eval_callback: OnlineEvaluation = trainer.online_eval_callback
+        optimized_metric = "val_auroc"
+        score = online_eval_callback.best_val_metrics_global["auroc"]
+        ckpt_path = online_eval_callback.checkpoint_paths["val_auroc"]
+    else:
+        assert trainer.checkpoint_callback is not None
 
-    ckpt_path = trainer.checkpoint_callback.best_model_path
-    optimized_metric = trainer.checkpoint_callback.monitor
-    score = trainer.checkpoint_callback.best_model_score
+        ckpt_path = trainer.checkpoint_callback.best_model_path
+        optimized_metric = trainer.checkpoint_callback.monitor
+        score = trainer.checkpoint_callback.best_model_score
+
     log.info(
         f"""
         PRETRAINING RESULTS ==== 

@@ -58,4 +58,4 @@ name: null
 pretrain_monitored_metric: val/ssl/var_loss
 save_feature_extractor_to_wandb: True
 
-checkpoint_root: /checkpoint/pwilson/${oc.env:SLURM_JOB_ID}
+#checkpoint_root: /checkpoint/pwilson/${oc.env:SLURM_JOB_ID}

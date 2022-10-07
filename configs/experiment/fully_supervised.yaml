@@ -3,7 +3,7 @@
 
 defaults: 
   - override /datamodule: supervised.yaml
-  - override /model: supervised_model.yaml
+  - override /model: supervised.yaml
   - override /callbacks: finetuner_callbacks_paul.yaml
   - override /trainer: exact_trainer.yaml
   - override /logger: wandb

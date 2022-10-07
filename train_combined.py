@@ -33,4 +33,7 @@ def main(config: DictConfig):
 
 
 if __name__ == "__main__":
+
+    from exactvu.utils.omegaconf import register_resolvers
+    register_resolvers()
     main()

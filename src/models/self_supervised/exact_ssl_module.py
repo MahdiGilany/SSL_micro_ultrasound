@@ -165,6 +165,9 @@ class ExactSSLModule(LightningModule):
         feats = self.backbone(X)
         return {"feats": feats}
 
+    def get_features(self, X):
+        return self.backbone(X)
+
     def _base_shared_step(self, X: torch.Tensor, targets: torch.Tensor) -> Dict:
         """Forwards a batch of images X and computes the classification loss, the logits, the
         features, acc@1 and acc@5.

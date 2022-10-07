@@ -40,8 +40,8 @@ datamodule:
   aug_prob: 0.4
 
 model:
-  ckpt_path: ${original_work_dir}/logs/experiments/runs/fintunUVA600_prstRgn_preTrnUVA600_semi-sup_Novo/2022-08-16_10-40-47/checkpoints/epoch_011.ckpt
-  backbone_ckpt_path: null #${original_work_dir}/logs/experiments/runs/vicreg_UVA600_prstRgn_strd3/2022-06-17_21-03-13/checkpoints/epoch_189.ckpt #26
+  ckpt_path: /home/paulw/checkpoints/tmp/epoch_011.ckpt #26
+  backbone_ckpt_path: /home/paulw/checkpoints/tmp/epoch_189.ckpt #26
   optim_algo: "Adam"
   semi_sup: False
   learning_rate: 0.0001
@@ -50,9 +50,9 @@ logger:
   wandb:
     name: ${name}
     tags: ["exact", "test_finetune", "IEEETransaction"]
-    entity: mahdigilany
+    entity: null
     project: IEEETransaction
 
-callbacks:
-  early_stopping:
-    monitor: "val/finetune_auc"
+#callbacks:
+  #early_stopping:
+  #  monitor: "val/finetune_auc"

@@ -155,3 +155,6 @@ wandb/
 /outputs
 /logs
 /checkpoints
+
+
+*.ckpt
