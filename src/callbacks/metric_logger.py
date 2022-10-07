@@ -168,6 +168,10 @@ class MetricLogger(Callback):
                 "test", test_core_logits, test_core_labels, test_gs
             )
             self.core_metric_manager.log(pl_module)
+            # if not trainer.sanity_checking:
+            #     self.log_core_scatter(trainer, val_core_logits, test_core_logits)
+            # self.val__ = val_core_logits
+            # self.test__ = test_core_logits
 
         ### max metrics ###
         if not trainer.sanity_checking:
@@ -196,34 +200,41 @@ class MetricLogger(Callback):
 
     def on_test_epoch_end(
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
-    ) -> None:
-        self.on_validation_epoch_end(trainer, pl_module)
+        ) -> None:
+            self.on_validation_epoch_end(trainer, pl_module)
+            # self.log_core_scatter(trainer, self.val__, self.test__)
 
-    def log_core_scatter(self, trainer, pl_module):
-        val_core_probs = []
-        test_core_probs = []
 
-        val_core_inv = np.asarray(trainer.datamodule.val_ds.core_inv) / 100.0
-        data = [[x, y] for (x, y) in zip(val_core_inv, val_core_probs)]
-        table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
-        wandb.log(
-            {
-                f"{self.val_prefix}{self.mode}_core_scatter": wandb.plot.scatter(
-                    table, "True_inv", "Pred_inv"
-                )
-            }
-        )
+    def log_core_scatter(self, trainer, val_core_logits, test_core_logits):
+        val_ds_dict = trainer.datamodule.val_ds
+        test_ds_dict = trainer.datamodule.test_ds
+        for center in val_ds_dict.keys():
+            print(center)
+            val_core_inv = np.asarray(val_ds_dict[center].core_inv) / 100.0
+            val_core_probs = val_core_logits[center][:, 0]
+            print("sss", val_core_inv)
+            print("sss", val_core_probs)
+            data = [[x, y] for (x, y) in zip(val_core_inv, val_core_probs)]
+            table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
+            wandb.log(
+                {
+                    f"val_{center}_{self.mode}_core_scatter": wandb.plot.scatter(
+                        table, "True_inv", "Pred_inv"
+                    )
+                }
+            )
 
-        test_core_inv = np.asarray(trainer.datamodule.test_ds.core_inv) / 100.0
-        data = [[x, y] for (x, y) in zip(test_core_inv, test_core_probs)]
-        table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
-        wandb.log(
-            {
-                f"{self.test_prefix}{self.mode}_core_scatter": wandb.plot.scatter(
-                    table, "True_inv", "Pred_inv"
-                )
-            }
-        )
+            test_core_inv = np.asarray(test_ds_dict[center].core_inv) / 100.0
+            test_core_probs = test_core_logits[center][:, 0]
+            data = [[x, y] for (x, y) in zip(test_core_inv, test_core_probs)]
+            table = wandb.Table(columns=["True_inv", "Pred_inv"], data=data)
+            wandb.log(
+                {
+                    f"test_{center}_{self.mode}_core_scatter": wandb.plot.scatter(
+                        table, "True_inv", "Pred_inv"
+                    )
+                }
+            )
 
     def on_epoch_end(
         self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
