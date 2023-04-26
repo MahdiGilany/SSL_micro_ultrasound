@@ -63,6 +63,10 @@ python train.py experiment=exact_finetune.yaml
 
 ### 
 
+## Software & Hardware Specs
+
+Experiments were run on a standard desktop with a single NVIDIA TITAN X GPU (24 GB GPU RAM), Intel(R) Core(TM) i9-9900X CPU @ 3.50GHz processor, running Ubuntu 22.05, Python 3.9 and Pytorch 1.13. With this configuration, each experiment took about 4 hours for stage 1, and 2 hours for stage 2 of our method. Although the total size of the dataset was 100 GB, we used memory mapping and only selected patches within the needle region, hence the CPU RAM footprint was kept under 8 GB.
+
 ## Citation
 
 If you find this code useful, please consider citing our paper:
