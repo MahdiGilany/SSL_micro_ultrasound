@@ -18,6 +18,14 @@ Deep learning-based analysis of high-frequency, high-resolution micro-ultrasound
 The basic codebase is implemented in Python 3.8.13 and is provided in experiments folder. The package version used for development are as follows:
 
 
+## ROC Curves
+<p align="center">
+  <img src="images/UVA_roc.png" width="49%" />
+  <img src="images/crceo_roc.png" width="49%" /> 
+</p>
+ROC curves of patch wise predictions for UVA and CRCEO datasets. 
+
+## Package Installation
 Install all requirements using following commands
 ```bash
 pip install -r requirements.txt
